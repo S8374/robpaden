@@ -1,0 +1,16 @@
+model Invitation {
+  id        Int              @id @default(autoincrement())
+  email     String
+  token     String           @unique
+  role      Role
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  invitedById Int
+  invitedBy   User @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  createdAt DateTime @default(now())
+}

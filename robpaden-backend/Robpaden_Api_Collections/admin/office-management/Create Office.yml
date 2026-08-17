@@ -1,0 +1,35 @@
+info:
+  name: Create Office
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/v1/offices/"
+  body:
+    type: multipart-form
+    data:
+      - name: name
+        type: text
+        value: test Name 2
+      - name: logoUrl
+        type: file
+        value:
+          - C:\Users\Sabbir\Downloads\images (2).jpg
+        contentType: image/jpeg
+      - name: timeZone
+        type: text
+        value: ""
+        disabled: true
+  auth: inherit
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3030
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,22 @@
+info:
+  name: Delete Office
+  type: http
+  seq: 4
+
+http:
+  method: DELETE
+  url: "{{baseUrl}}/admin/v1/offices/{{companyId}}"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3030
+    - name: companyId
+      value: dfe82961-4ce8-404c-addb-54032d7e2258
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,58 @@
+model User {
+  id          Int     @id @default(autoincrement())
+  email       String  @unique
+  password    String?
+  name        String
+  avatarUrl   String?
+  isActive    Boolean @default(true)
+  role        Role    @default(AGENT)
+
+  // Goals for Agents
+  dailyGoal   Int?
+  weeklyGoal  Int?
+  monthlyGoal Int?
+
+  // Dynamic access control for sidebar navigation / dashboard modules
+  permissions Permission[]
+
+  // Limits
+  agentLimit  Int?
+
+  companyId Int?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+
+
+  // Manager self-relation: An Agent belongs to a Manager
+  managerId Int?
+  manager   User?  @relation("UserToManager", fields: [managerId], references: [id])
+  agents    User[] @relation("UserToManager")
+
+  // Sales
+  salesMade     Sale[] @relation("AgentSales")
+  salesRecorded Sale[] @relation("ManagerSales")
+
+  // Invitations created by this user
+  invitationsCreated Invitation[] @relation("InvitedBy")
+
+  // Performance
+  performanceRecords PerformanceRecord[] @relation("AgentPerformance")
+
+  // Audits
+  auditsAsAgent   SalesAuditLog[] @relation("AgentAudit")
+  auditsAsManager SalesAuditLog[] @relation("ManagerAudit")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+
+  users User[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -1,0 +1,25 @@
+info:
+  name: Create Team
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/manager/teams"
+  auth: inherit
+
+body:
+  type: json
+  data: |-
+    {
+      "name": "Alpha Squad",
+      "dailyTarget": 5,
+      "weeklyTarget": 25,
+      "monthlyTarget": 100
+    }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

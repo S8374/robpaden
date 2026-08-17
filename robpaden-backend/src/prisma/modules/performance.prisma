@@ -1,0 +1,49 @@
+enum PerformancePeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum AuditAction {
+  ADDED
+  UPDATED
+}
+
+model PerformanceRecord {
+  id         Int               @id @default(autoincrement())
+  period     PerformancePeriod
+  startDate  DateTime
+  salesCount Int               @default(0)
+
+  agentId Int?
+  agent   User? @relation("AgentPerformance", fields: [agentId], references: [id])
+
+
+
+  companyId Int
+  company   Company @relation("CompanyPerformance", fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([agentId, period, startDate])
+
+}
+
+model SalesAuditLog {
+  id             Int         @id @default(autoincrement())
+  action         AuditAction
+  previousAmount Int
+  newAmount      Int
+  date           DateTime
+
+  agentId Int
+  agent   User @relation("AgentAudit", fields: [agentId], references: [id])
+
+  managerId Int
+  manager   User @relation("ManagerAudit", fields: [managerId], references: [id])
+
+
+
+  createdAt DateTime @default(now())
+}

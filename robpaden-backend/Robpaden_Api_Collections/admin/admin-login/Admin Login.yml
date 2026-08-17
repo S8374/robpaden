@@ -1,0 +1,27 @@
+info:
+  name: Admin Login
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/login"
+  body:
+    type: json
+    data: |
+      {
+        "email": "sabbirmridha880@gmail.com",
+        "password": "sabbirmridha880@gmail.com"
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3030
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,19 @@
+enum Role {
+  SUPER_ADMIN
+  MANAGER
+  AGENT
+}
+
+enum SaleStatus {
+  CONFIRMED
+  DELETED
+  CORRECTED
+}
+
+
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}

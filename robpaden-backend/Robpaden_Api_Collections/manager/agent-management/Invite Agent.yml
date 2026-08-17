@@ -1,0 +1,28 @@
+info:
+  name: Invite Agent
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/manager/agents/invite"
+  params:
+    - name: email
+      value: ""
+      type: query
+      disabled: true
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Test Agent",
+        "email":"[EMAIL_ADDRESS]",
+        "password": "password123"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

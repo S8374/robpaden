@@ -1,0 +1,14 @@
+info:
+  name: Get TV Board
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{baseUrl}}/tv/board/1"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,31 @@
+info:
+  name: Invite User
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/admin/v1/users/invite"
+  body:
+    type: json
+    data: |
+      {
+        "name": "Test Manager",
+        "email": "new.manager@example.com",
+        "password": "password123",
+        "role": "AGENT",
+        "companyId": 1,
+        "managerId": 2
+      }
+  auth: inherit
+
+runtime:
+  variables:
+    - name: baseUrl
+      value: http://localhost:3030
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

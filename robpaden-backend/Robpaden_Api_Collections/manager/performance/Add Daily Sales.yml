@@ -1,0 +1,24 @@
+info:
+  name: Add Daily Sales
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/manager/performance/daily-sales"
+  auth: inherit
+
+body:
+  type: json
+  raw: |-
+    {
+      "agentId": 42,
+      "date": "2026-09-01T00:00:00.000Z",
+      "salesCount": 5
+    }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

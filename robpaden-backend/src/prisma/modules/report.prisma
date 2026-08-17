@@ -1,0 +1,10 @@
+model Report {
+  id      Int      @id @default(autoincrement())
+  date    DateTime
+  fileUrl String
+
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id])
+
+  createdAt DateTime @default(now())
+}

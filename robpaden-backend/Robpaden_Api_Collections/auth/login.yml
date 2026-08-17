@@ -1,0 +1,24 @@
+info:
+  name: login
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/auth/login"
+  body:
+    type: multipart-form
+    data:
+      - name: email
+        type: text
+        value: dwertrwetr
+      - name: password
+        type: text
+        value: reyty
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

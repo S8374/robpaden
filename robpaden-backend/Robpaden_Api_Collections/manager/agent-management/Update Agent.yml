@@ -1,0 +1,26 @@
+info:
+  name: Update Agent
+  type: http
+  seq: 4
+
+http:
+  method: PUT
+  url: "{{baseUrl}}/manager/agents/1"
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Updated Agent Name",
+        "avatarUrl": "http://localhost:5000/uploads/example.png",
+        "dailyGoal": 20,
+        "weeklyGoal": 42,
+        "monthlyGoal": 34,
+        "isActive": true
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

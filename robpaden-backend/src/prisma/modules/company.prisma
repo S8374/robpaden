@@ -1,0 +1,37 @@
+model Company {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  settings CompanySettings?
+
+  users       User[]
+  reports     Report[]
+  invitations Invitation[]
+
+
+  performanceRecords PerformanceRecord[] @relation("CompanyPerformance")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CompanySettings {
+  id        String  @id @default(uuid())
+  companyId Int     @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  companyName      String?
+  logoUrl          String?
+  timeZone         String   @default("UTC")
+  officeStartTime  String   @default("09:00")
+  officeCloseTime  String   @default("17:00")
+  dailyResetTime   String   @default("00:00")
+  weeklyResetDay   Int      @default(1)
+  weeklyResetTime  String   @default("00:00")
+  monthlyResetDay  Int      @default(1)
+  monthlyGoal      Int      @default(2000)
+  celebrationSound Boolean  @default(true)
+  celebrationStyle String   @default("default")
+  tvTheme          String   @default("dark")
+  reportRecipients String[]
+}
