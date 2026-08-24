@@ -1,13 +1,13 @@
 interface RankingListProps {
   isLoading?: boolean;
+  data?: any[];
 }
 
-export function RankingList({ isLoading }: RankingListProps) {
-  const rankings = [
-    { rank: 1, name: "Jordan Lee", initials: "JL", score: 24, percent: 100 },
-    { rank: 2, name: "Sam Patel", initials: "SP", score: 22, percent: 90 },
-    { rank: 3, name: "Casey Kim", initials: "CK", score: 19, percent: 75 },
-  ];
+export function RankingList({ isLoading, data }: RankingListProps) {
+  const rankings = (data || []).map((r: any) => ({
+    ...r,
+    percent: Math.min((r.sales / (r.dailyGoal || 1)) * 100, 100)
+  }));
 
   return (
     <div className="space-y-3">
@@ -25,6 +25,10 @@ export function RankingList({ isLoading }: RankingListProps) {
             </div>
           </div>
         ))
+      ) : rankings.length === 0 ? (
+        <div className="p-8 text-center text-zinc-500 bg-white rounded-xl border border-zinc-200 shadow-sm">
+          <p className="text-sm font-medium">Not available</p>
+        </div>
       ) : rankings.map((item) => (
         <div key={item.rank} className="flex items-center gap-4 p-4 bg-white rounded-xl border border-zinc-200 shadow-sm hover:shadow-md transition-shadow group">
           <span className="text-sm font-bold text-zinc-500 w-4 text-center">{item.rank}</span>
@@ -34,7 +38,7 @@ export function RankingList({ isLoading }: RankingListProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-zinc-900 truncate">{item.name}</span>
-              <span className="text-sm font-bold text-zinc-900">{item.score}</span>
+              <span className="text-sm font-bold text-zinc-900">{item.sales} <span className="text-zinc-400 text-xs font-medium">/ {item.dailyGoal || 1}</span></span>
             </div>
             <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
               <div 

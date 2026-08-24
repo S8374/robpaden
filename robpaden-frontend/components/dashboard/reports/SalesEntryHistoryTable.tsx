@@ -1,13 +1,14 @@
-export function SalesEntryHistoryTable({ isLoading }: { isLoading?: boolean }) {
-  const mockEntries = [
-    { id: 1, time: "2:41 PM", agentInitials: "AB", agentName: "Jordan Lee", count: 1, enteredBy: "Rob Paden", status: "Confirmed" },
-    { id: 2, time: "2:38 PM", agentInitials: "AB", agentName: "Sam Patel", count: 1, enteredBy: "Rob Paden", status: "Confirmed" },
-    { id: 3, time: "2:30 PM", agentInitials: "AB", agentName: "Casey Kim", count: 1, enteredBy: "Rob Paden", status: "Reversed" },
-    { id: 4, time: "2:22 PM", agentInitials: "AB", agentName: "Riley Chen", count: 1, enteredBy: "Rob Paden", status: "Confirmed" },
-    { id: 5, time: "1:15 PM", agentInitials: "AB", agentName: "Jordan Lee", count: 2, enteredBy: "Rob Paden", status: "Confirmed" },
-    { id: 6, time: "12:47 PM", agentInitials: "AB", agentName: "Morgan Diaz", count: 1, enteredBy: "Casey Kim (Manager)", status: "Confirmed" },
-    { id: 7, time: "11:02 AM", agentInitials: "AB", agentName: "Jordan Lee", count: 1, enteredBy: "Casey Kim (Manager)", status: "Reversed" },
-  ];
+interface SalesEntryHistoryTableProps {
+  isLoading?: boolean;
+  entryHistory?: any[];
+}
+
+export function SalesEntryHistoryTable({ isLoading, entryHistory }: SalesEntryHistoryTableProps) {
+  const data = entryHistory || [];
+
+  const formatTime = (timeStr: string) => {
+    return new Date(timeStr).toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true });
+  };
 
   return (
     <div className="mt-8 mb-12">
@@ -37,18 +38,20 @@ export function SalesEntryHistoryTable({ isLoading }: { isLoading?: boolean }) {
                 <div className="w-32 h-3 bg-zinc-100 rounded"></div>
               </div>
             ))
+          ) : data.length === 0 ? (
+            <div className="p-8 text-center text-zinc-500 text-sm">No entry history found for this period.</div>
           ) : (
-            mockEntries.map((entry) => (
+            data.map((entry) => (
               <div key={`mob-${entry.id}`} className="p-4 hover:bg-zinc-50/50 transition-colors">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-[#f0f4ff] text-[#5252ff] flex items-center justify-center font-bold text-xs shadow-sm shrink-0">
-                      {entry.agentInitials}
+                      {entry.agentName.substring(0, 2).toUpperCase()}
                     </div>
                     <span className="font-semibold text-zinc-900 text-[14px]">{entry.agentName}</span>
                   </div>
                   <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                    entry.status === "Confirmed" 
+                    entry.status === "CONFIRMED" || entry.status === "Confirmed"
                       ? "bg-[#e5fcf1] text-[#1f9d55]" 
                       : "bg-[#ffe5e5] text-[#d62828]"
                   }`}>
@@ -57,7 +60,7 @@ export function SalesEntryHistoryTable({ isLoading }: { isLoading?: boolean }) {
                 </div>
                 
                 <div className="flex justify-between items-center bg-zinc-50 rounded-lg p-2.5 mb-2 border border-zinc-100">
-                  <span className="text-[12px] font-medium text-zinc-500">{entry.time}</span>
+                  <span className="text-[12px] font-medium text-zinc-500">{formatTime(entry.time)}</span>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] font-bold text-zinc-400 uppercase">Count:</span>
                     <span className="font-bold text-zinc-900 text-[14px]">{entry.count}</span>
@@ -109,16 +112,20 @@ export function SalesEntryHistoryTable({ isLoading }: { isLoading?: boolean }) {
                   </td>
                 </tr>
               ))
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">No entry history found for this period.</td>
+              </tr>
             ) : (
-              mockEntries.map((entry) => (
+              data.map((entry) => (
                 <tr key={entry.id} className="hover:bg-zinc-50/50 transition-colors">
                   <td className="px-6 py-4 text-zinc-500 font-medium text-[13px]">
-                    {entry.time}
+                    {formatTime(entry.time)}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-7 h-7 rounded-full bg-[#f0f4ff] text-[#5252ff] flex items-center justify-center font-bold text-[11px] shrink-0">
-                        {entry.agentInitials}
+                        {entry.agentName.substring(0, 2).toUpperCase()}
                       </div>
                       <span className="font-semibold text-zinc-900 text-[13px]">{entry.agentName}</span>
                     </div>
@@ -131,7 +138,7 @@ export function SalesEntryHistoryTable({ isLoading }: { isLoading?: boolean }) {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                      entry.status === "Confirmed" 
+                      entry.status === "CONFIRMED" || entry.status === "Confirmed"
                         ? "bg-[#e5fcf1] text-[#1f9d55]" 
                         : "bg-[#ffe5e5] text-[#d62828]"
                     }`}>

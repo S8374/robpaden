@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-// import { useLoginMutation } from "@/redux/api/auth.api";
+import { useLoginMutation } from "@/redux/api/auth.api";
 import { toast } from "sonner";
 
 export default function Home() {
@@ -11,12 +11,13 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [branding, setBranding] = useState<{name: string, logoUrl: string | null} | null>(null);
+  const [branding, setBranding] = useState<{ name: string, logoUrl: string | null } | null>(null);
   const [isBrandingLoading, setIsBrandingLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // const [login] = useLoginMutation();
+  const [login] = useLoginMutation();
 
   useEffect(() => {
     // If already logged in on this tab, skip login page
@@ -27,7 +28,7 @@ export default function Home() {
 
     const params = new URLSearchParams(window.location.search);
     const officeId = params.get("officeId");
-    
+
     if (officeId) {
       // Fetch public branding from backend
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3030";
@@ -43,19 +44,27 @@ export default function Home() {
     } else {
       setIsBrandingLoading(false);
     }
+
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
+    const rememberedPassword = localStorage.getItem("rememberedPassword");
+    if (rememberedEmail && rememberedPassword) {
+      setEmail(rememberedEmail);
+      setPassword(rememberedPassword);
+      setRememberMe(true);
+    }
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // DEMO MODE: Bypass backend authentication
-    setIsLoading(true);
-    setTimeout(() => {
-      sessionStorage.setItem("accessToken", "demo-token-bypass");
-      router.push("/dashboard");
-    }, 500); // Small delay to show loading state for demo purposes
 
-    /*
+    // DEMO MODE: Bypass backend authentication
+    // setIsLoading(true);
+    // setTimeout(() => {
+    //   sessionStorage.setItem("accessToken", "demo-token-bypass");
+    //   router.push("/dashboard");
+    // }, 500); // Small delay to show loading state for demo purposes
+
+
     if (!email || !password) {
       toast.error("Please enter both email and password.");
       return;
@@ -70,6 +79,15 @@ export default function Home() {
         if (res.data?.token) {
           sessionStorage.setItem("accessToken", res.data.token);
         }
+        
+        if (rememberMe) {
+          localStorage.setItem("rememberedEmail", email);
+          localStorage.setItem("rememberedPassword", password);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+          localStorage.removeItem("rememberedPassword");
+        }
+
         router.push("/dashboard");
       } else {
         toast.error(res.message || "Invalid credentials.");
@@ -80,18 +98,18 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-    */
+  
   };
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center relative overflow-hidden font-sans">
-      
+
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[600px] h-[600px] rounded-full bg-[#f0f2fb] opacity-80 pointer-events-none" />
-      
+
       {/* Login Card */}
       <div className="relative z-10 w-full max-w-[420px] p-8 sm:p-10 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        
+
         {/* Logo */}
         <div className={`flex justify-center mb-2 items-end ${branding || isBrandingLoading ? 'min-h-[96px]' : ''}`}>
           {isBrandingLoading ? (
@@ -167,13 +185,19 @@ export default function Home() {
 
           <div className="flex items-center justify-between pt-1">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-[#5252ff] focus:ring-[#5252ff]/20 focus:ring-offset-0 transition-all cursor-pointer"
               />
               <span className="text-[13px] text-gray-600 font-medium select-none">Remember me</span>
             </label>
-            <button type="button" className="text-[13px] font-semibold text-[#5252ff] hover:text-[#4141cc] transition-colors">
+            <button 
+              type="button" 
+              onClick={() => router.push("/forgot-password")}
+              className="text-[13px] font-semibold text-[#5252ff] hover:text-[#4141cc] transition-colors cursor-pointer"
+            >
               Forgot password?
             </button>
           </div>

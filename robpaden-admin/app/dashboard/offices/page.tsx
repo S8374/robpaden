@@ -17,6 +17,26 @@ const formatAMPM = (timeStr: string) => {
   return `${hourFormatted}:${minute} ${ampm}`;
 };
 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
+const parseTime = (timeStr: string) => {
+  if (!timeStr) return new Date();
+  const [h, m] = timeStr.split(':');
+  const d = new Date();
+  d.setHours(parseInt(h, 10));
+  d.setMinutes(parseInt(m || '0', 10));
+  d.setSeconds(0);
+  return d;
+};
+
+const formatTime = (date: Date | null) => {
+  if (!date) return "09:00";
+  const h = date.getHours().toString().padStart(2, '0');
+  const m = date.getMinutes().toString().padStart(2, '0');
+  return `${h}:${m}`;
+};
+
 export default function OfficesPage() {
   const { data, isLoading, isFetching } = useGetOfficesQuery();
   const [createOffice, { isLoading: isCreating }] = useCreateOfficeMutation();
@@ -131,7 +151,7 @@ export default function OfficesPage() {
         <div className="flex gap-3">
           <button 
             onClick={openCreateModal}
-            className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
+            className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create Office
@@ -150,8 +170,8 @@ export default function OfficesPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-             <button className="text-sm font-medium text-zinc-600 bg-white border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50">Filter</button>
-             <button className="text-sm font-medium text-zinc-600 bg-white border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50">Export</button>
+             <button className="text-sm font-medium text-zinc-600 bg-white border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">Filter</button>
+             <button className="text-sm font-medium text-zinc-600 bg-white border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">Export</button>
           </div>
         </div>
 
@@ -251,8 +271,29 @@ export default function OfficesPage() {
                           )}
                        </div>
                     </td>
-                    <td className="px-4 py-4 text-center font-semibold text-zinc-700">
-                      {office.settings?.monthlyGoal ? `$${office.settings.monthlyGoal.toLocaleString()}` : '-'}
+                    <td className="px-4 py-4">
+                      {office.settings?.monthlyGoal ? (
+                        <div className="flex flex-col items-center justify-center gap-1.5 w-full">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-xs font-bold text-zinc-800">
+                              <span className="text-primary">${((office as any).currentMonthSales || 0).toLocaleString()}</span> <span className="text-zinc-400 font-normal">/ ${(office.settings.monthlyGoal || 0).toLocaleString()}</span>
+                            </span>
+                          </div>
+                          
+                          <div className="w-full max-w-[100px] h-1.5 bg-zinc-100 rounded-full overflow-hidden relative" title={`${Math.round((((office as any).currentMonthSales || 0) / office.settings.monthlyGoal) * 100)}% Completed`}>
+                            <div 
+                              className="absolute top-0 left-0 h-full bg-[#5252ff] rounded-full transition-all duration-1000 ease-out"
+                              style={{ width: `${Math.min(100, Math.max(0, (((office as any).currentMonthSales || 0) / office.settings.monthlyGoal) * 100))}%` }}
+                            ></div>
+                          </div>
+                          
+                          <div className="text-[10px] font-bold text-zinc-400 mt-0.5">
+                            {Math.round((((office as any).currentMonthSales || 0) / office.settings.monthlyGoal) * 100)}%
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center font-medium text-zinc-400">-</div>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-center font-medium text-zinc-500">
                       {formatAMPM(office.settings?.officeStartTime || "09:00")} - {formatAMPM(office.settings?.officeCloseTime || "17:00")}
@@ -270,16 +311,16 @@ export default function OfficesPage() {
                       <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => openEditModal(office)}
-                          className="text-zinc-400 hover:text-zinc-900 transition-colors p-2 rounded-lg hover:bg-zinc-100" title="Edit Office"
+                          className="text-zinc-400 hover:text-zinc-900 transition-colors p-2 rounded-lg hover:bg-zinc-100 cursor-pointer" title="Edit Office"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-4 h-4 pointer-events-none" />
                         </button>
                         <button 
                           onClick={() => setOfficeToDelete({ id: office.id, name: office.name })}
                           disabled={isDeleting && officeToDelete?.id === office.id}
-                          className="text-zinc-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 disabled:opacity-50" title="Delete Office"
+                          className="text-zinc-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed" title="Delete Office"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 pointer-events-none" />
                         </button>
                       </div>
                     </td>
@@ -364,21 +405,29 @@ export default function OfficesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="officeStartTime" className="block text-sm font-semibold text-zinc-700 mb-1.5">Office Start Time</label>
-                  <input 
+                  <DatePicker
                     id="officeStartTime"
-                    type="time" 
-                    value={formData.officeStartTime}
-                    onChange={(e) => setFormData({ ...formData, officeStartTime: e.target.value })}
+                    selected={parseTime(formData.officeStartTime)}
+                    onChange={(date: Date | null) => setFormData({ ...formData, officeStartTime: formatTime(date) })}
+                    showTimeSelect
+                    showTimeSelectOnly
+                    timeIntervals={15}
+                    timeCaption="Time"
+                    dateFormat="h:mm aa"
                     className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
                   />
                 </div>
                 <div>
                   <label htmlFor="officeCloseTime" className="block text-sm font-semibold text-zinc-700 mb-1.5">Office Close Time</label>
-                  <input 
+                  <DatePicker
                     id="officeCloseTime"
-                    type="time" 
-                    value={formData.officeCloseTime}
-                    onChange={(e) => setFormData({ ...formData, officeCloseTime: e.target.value })}
+                    selected={parseTime(formData.officeCloseTime)}
+                    onChange={(date: Date | null) => setFormData({ ...formData, officeCloseTime: formatTime(date) })}
+                    showTimeSelect
+                    showTimeSelectOnly
+                    timeIntervals={15}
+                    timeCaption="Time"
+                    dateFormat="h:mm aa"
                     className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
                   />
                 </div>

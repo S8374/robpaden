@@ -15,7 +15,6 @@ export default function AgentsPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  /* --- BACKEND LOGIC COMMENTED OUT FOR DEMO ---
   const { data: agentsData, isLoading: agentsLoading } = useGetAgentsQuery({});
   const { data: meData, isLoading: meLoading } = useGetMeQuery({});
   
@@ -29,7 +28,6 @@ export default function AgentsPage() {
   const agentLimit = me?.agentLimit;
   const limitText = agentLimit ? `${totalAgents} / ${agentLimit}` : `${totalAgents} (Unlimited)`;
   const usagePercent = agentLimit ? Math.min((totalAgents / agentLimit) * 100, 100) : 0;
-  --------------------------------------------- */
 
   return (
     <div className="h-full flex flex-col bg-zinc-50">
@@ -38,7 +36,6 @@ export default function AgentsPage() {
       {/* Main Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-4 md:p-8">
          
-         {/* --- ORIGINAL STATS CARDS COMMENTED OUT FOR DEMO ---
          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm flex items-start gap-4 hover:shadow-md transition-shadow">
                <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
@@ -88,9 +85,8 @@ export default function AgentsPage() {
                </div>
             </div>
          </div>
-         ----------------------------------------------------- */}
 
-         <AgentListTable agents={[]} isLoading={isDemoLoading} />
+         <AgentListTable agents={agents} isLoading={agentsLoading || meLoading || isDemoLoading} />
       </div>
     </div>
   );

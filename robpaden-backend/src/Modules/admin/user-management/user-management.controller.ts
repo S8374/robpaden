@@ -53,6 +53,20 @@ export class UserManagementController extends BaseController {
     return this.sendResponse(req, res, "User details retrieved successfully", 200, result);
   }
 
+  public async getManagerActivityTimeline(req: Request, res: Response) {
+    const id = parseInt(req.params.id as string, 10);
+    this.logger.info("Received request to fetch manager activity timeline", { managerId: id });
+    const result = await this.userManagementService.getManagerActivityTimeline(id);
+    return this.sendResponse(req, res, "Activity timeline retrieved successfully", 200, result);
+  }
+  public async getAgentActivityTimeline(req: Request, res: Response) {
+    const id = parseInt(req.params.id as string, 10);
+    this.logger.info("Received request to fetch agent activity timeline", { agentId: id });
+
+    const result = await this.userManagementService.getAgentActivityTimeline(id);
+    return this.sendResponse(req, res, "Agent activity timeline retrieved successfully", 200, result);
+  }
+
   public async updateUser(req: Request, res: Response) {
     const id = parseInt(req.params.id as  string, 10);
     this.logger.info("Received request to update user", { userId: id });

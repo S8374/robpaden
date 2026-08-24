@@ -39,6 +39,15 @@ export class OfficeManagementService {
     });
 
     this.logger.info("Company created successfully", { companyId: company.id });
+    
+    await this.prisma.systemActivity.create({
+      data: {
+        action: "New Office Created",
+        entityName: company.name,
+        iconType: "Building2"
+      }
+    });
+
     return company;
   }
 
@@ -56,7 +65,7 @@ export class OfficeManagementService {
           }
         },
         _count: {
-          select: { users: true, teams: true }
+          select: { users: true }
         }
       },
       orderBy: {
@@ -64,16 +73,34 @@ export class OfficeManagementService {
       }
     });
 
-    return offices.map(office => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+
+    return Promise.all(offices.map(async office => {
       const managers = office.users.filter(u => u.role === 'MANAGER');
       const agents = office.users.filter(u => u.role === 'AGENT');
       const { users, ...rest } = office;
+
+      // Calculate current month's sales
+      const aggregate = await this.prisma.performanceRecord.aggregate({
+        where: {
+          companyId: office.id,
+          period: 'MONTHLY',
+          startDate: startOfMonth
+        },
+        _sum: {
+          salesCount: true
+        }
+      });
+      const currentMonthSales = aggregate._sum.salesCount || 0;
+
       return {
         ...rest,
         managers,
-        agents
+        agents,
+        currentMonthSales
       };
-    });
+    }));
   }
 
   public async updateOfficeSettings(id: number, settings: UpdateOfficeSettingsBodyDTO) {
@@ -104,6 +131,25 @@ export class OfficeManagementService {
     }
 
     this.logger.info("Company settings updated successfully", { companyId: id });
+    
+    if (settings.tvTheme) {
+      await this.prisma.systemActivity.create({
+        data: {
+          action: "TV Theme Updated",
+          entityName: settings.companyName || company.name,
+          iconType: "MonitorPlay"
+        }
+      });
+    } else {
+      await this.prisma.systemActivity.create({
+        data: {
+          action: "Office Settings Updated",
+          entityName: settings.companyName || company.name,
+          iconType: "Building2"
+        }
+      });
+    }
+
     return updatedSettings;
   }
 
@@ -115,18 +161,18 @@ export class OfficeManagementService {
       throw new NotFoundError("Company not found");
     }
 
-    await this.prisma.company.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.performanceRecord.deleteMany({ where: { companyId: id } });
+      await tx.invitation.deleteMany({ where: { companyId: id } });
+      await tx.companySettings.deleteMany({ where: { companyId: id } });
+      
+      // Detach users from the office
+      await tx.user.updateMany({ where: { companyId: id }, data: { companyId: null } });
+
+      await tx.company.delete({ where: { id } });
+    });
     
     this.logger.info("Company deleted successfully", { companyId: id });
   }
 
-  public async getOfficeStats() {
-    this.logger.info("Fetching office statistics");
-    
-    const totalOffices = await this.prisma.company.count();
-    
-    return {
-      totalOffices
-    };
-  }
 }

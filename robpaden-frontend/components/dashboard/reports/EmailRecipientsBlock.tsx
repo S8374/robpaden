@@ -1,91 +1,97 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { toast } from "sonner";
+import { X, Mail } from "lucide-react";
+import { useAddRecipientMutation, useRemoveRecipientMutation } from "@/redux/api/report.api";
 
-export function EmailRecipientsBlock({ isLoading }: { isLoading?: boolean }) {
-  const [emails, setEmails] = useState<string[]>([
-    "rob@officea.com",
-    "ops@officea.com",
-    "manager2@officea.com",
-  ]);
+interface EmailRecipientsBlockProps {
+  isLoading?: boolean;
+  recipients?: any[];
+}
+
+export function EmailRecipientsBlock({ isLoading, recipients }: EmailRecipientsBlockProps) {
+  const data = recipients || [];
   const [inputValue, setInputValue] = useState("");
+  const [addRecipient, { isLoading: isAdding }] = useAddRecipientMutation();
+  const [removeRecipient, { isLoading: isRemoving }] = useRemoveRecipientMutation();
 
-  const handleAdd = () => {
-    const trimmed = inputValue.trim();
-    if (trimmed && !emails.includes(trimmed)) {
-      setEmails([...emails, trimmed]);
+  const handleAdd = async () => {
+    if (!inputValue.trim() || !inputValue.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+    try {
+      await addRecipient(inputValue.trim()).unwrap();
+      toast.success("Email added to recipients");
       setInputValue("");
+    } catch (err: any) {
+      toast.error(err.data?.message || "Failed to add email");
     }
   };
 
-  const handleRemove = (emailToRemove: string) => {
-    setEmails(emails.filter((e) => e !== emailToRemove));
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAdd();
+  const handleRemove = async (email: string) => {
+    try {
+      await removeRecipient(email).unwrap();
+      toast.success("Email removed");
+    } catch (err: any) {
+      toast.error(err.data?.message || "Failed to remove email");
     }
   };
 
   return (
-    <div className="mt-8">
-      <h3 className="text-[15px] font-bold text-zinc-900 mb-4 tracking-tight">Email Recipients</h3>
-      <div className="bg-white rounded-xl shadow-sm border border-zinc-200 p-6 flex flex-col gap-4">
-        
-        {/* Pills Container */}
-        {isLoading ? (
-          <div className="flex flex-wrap gap-2 animate-pulse">
-            <div className="w-32 h-8 bg-zinc-100 rounded-md"></div>
-            <div className="w-32 h-8 bg-zinc-100 rounded-md"></div>
-            <div className="w-40 h-8 bg-zinc-100 rounded-md"></div>
-          </div>
-        ) : emails.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {emails.map((email) => (
+    <div className="mb-12">
+      <h3 className="text-[15px] font-bold text-zinc-900 tracking-tight mb-4">Email Recipients</h3>
+      
+      <div className="bg-white rounded-xl shadow-sm border border-zinc-200 p-4">
+        {/* Recipients Pills */}
+        <div className="flex flex-wrap gap-2 mb-4 min-h-[32px]">
+          {isLoading ? (
+            <div className="flex gap-2">
+              <div className="w-32 h-8 bg-zinc-100 rounded-md animate-pulse"></div>
+              <div className="w-24 h-8 bg-zinc-100 rounded-md animate-pulse"></div>
+            </div>
+          ) : data.length === 0 ? (
+            <div className="text-[13px] text-zinc-400 flex items-center h-8">No recipients configured.</div>
+          ) : (
+            data.map((recipient) => (
               <div 
-                key={email} 
-                className="flex items-center gap-1.5 bg-[#f4f4f5] text-zinc-700 px-3 py-1.5 rounded-md text-[13px] font-medium"
+                key={recipient.id} 
+                className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 text-zinc-600 rounded-md text-[13px] font-medium"
               >
-                {email}
+                {recipient.email}
                 <button 
-                  onClick={() => handleRemove(email)}
-                  className="text-zinc-400 cursor-pointer hover:text-zinc-600 focus:outline-none"
+                  onClick={() => handleRemove(recipient.email)}
+                  disabled={isRemoving}
+                  className="text-zinc-400 hover:text-red-500 transition-colors disabled:opacity-50 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Input Area */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {isLoading ? (
-            <>
-              <div className="flex-1 h-10 bg-zinc-100 rounded-lg animate-pulse"></div>
-              <div className="w-20 h-10 bg-zinc-100 rounded-lg animate-pulse"></div>
-            </>
-          ) : (
-            <>
-              <input 
-                type="email"
-                placeholder="Add recipient email..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="flex-1 px-4 py-2 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all"
-              />
-              <button 
-                onClick={handleAdd}
-                className="bg-[#5252ff] cursor-pointer hover:bg-[#4242e5] text-white px-6 py-2 rounded-lg text-sm font-semibold shadow-sm transition-colors"
-              >
-                Add
-              </button>
-            </>
+            ))
           )}
         </div>
 
+        {/* Input Form */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 flex items-center border border-zinc-200 rounded-lg px-3 py-2 bg-white focus-within:ring-2 focus-within:ring-[#5252ff]/20 focus-within:border-[#5252ff] transition-all">
+            <input 
+              type="email"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              placeholder="Add recipient email..."
+              disabled={isAdding}
+              className="flex-1 outline-none text-[13px] text-zinc-900 placeholder:text-zinc-400 bg-transparent"
+            />
+            <Mail className="w-4 h-4 text-emerald-500 ml-2 shrink-0" />
+          </div>
+          <button 
+            onClick={handleAdd}
+            disabled={isAdding}
+            className="bg-[#5252ff] hover:bg-[#4242e5] text-white px-6 py-2.5 rounded-lg text-[13px] font-bold transition-colors shadow-sm disabled:opacity-50 cursor-pointer whitespace-nowrap"
+          >
+            {isAdding ? "..." : "Add"}
+          </button>
+        </div>
       </div>
     </div>
   );

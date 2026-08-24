@@ -1,0 +1,7 @@
+model SystemActivity {
+  id         Int      @id @default(autoincrement())
+  action     String
+  entityName String
+  iconType   String
+  createdAt  DateTime @default(now())
+}

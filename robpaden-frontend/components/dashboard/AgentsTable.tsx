@@ -2,11 +2,20 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { X, Loader2, AlertCircle } from "lucide-react";
 
+import { 
+  useGetAgentsQuery, 
+  useAddDailySalesMutation,
+  useGetAgentTodayAuditQuery,
+  useReverseSaleMutation,
+  useEditSaleMutation
+} from "@/redux/api/agent.api";
+
 interface AgentsTableProps {
-  isLoading?: boolean;
+  isLoading?: boolean; // We'll ignore the prop and use the query's isLoading
+  date?: string;
 }
 
-export function AgentsTable({ isLoading }: AgentsTableProps) {
+export function AgentsTable({ isLoading, date }: AgentsTableProps) {
   // Add Sale State
   const [selectedAgent, setSelectedAgent] = useState<{ id: number; name: string; initials: string } | null>(null);
   const [saleCount, setSaleCount] = useState(1);
@@ -14,6 +23,7 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
 
   // Correction Sidebar State
   const [correctAgent, setCorrectAgent] = useState<{ id: number; name: string; initials: string; today: number } | null>(null);
+  const [expandedTx, setExpandedTx] = useState<number | null>(null);
   
   // Correction Modals State
   const [reverseSale, setReverseSale] = useState<any>(null);
@@ -21,21 +31,36 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
   const [editCount, setEditCount] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const agents = [
-    { id: 1, name: "Jordan Lee", initials: "JL", today: 24, week: 128 },
-    { id: 2, name: "Sam Patel", initials: "SP", today: 22, week: 118 },
-    { id: 3, name: "Casey Kim", initials: "CK", today: 19, week: 101 },
-    { id: 4, name: "Riley Chen", initials: "RC", today: 16, week: 90 },
-    { id: 5, name: "Morgan Diaz", initials: "MD", today: 14, week: 78 },
-    { id: 6, name: "Avery Brooks", initials: "AB", today: 11, week: 60 },
-  ];
+  const { data: agentsData, isLoading: queryLoading } = useGetAgentsQuery(date ? { date } : {});
+  const agentsList = agentsData?.data || [];
+  
+  const [addDailySales] = useAddDailySalesMutation();
+  const [reverseSaleMutation] = useReverseSaleMutation();
+  const [editSaleMutation] = useEditSaleMutation();
 
-  // Mock Transactions for Correct Sidebar
-  const mockTransactions = [
-    { id: 1, count: 1, time: "2:41 PM", by: "Rob Paden", status: "Confirmed" },
-    { id: 2, count: 2, time: "1:15 PM", by: "Rob Paden", status: "Confirmed" },
-    { id: 3, count: 1, time: "11:02 AM", by: "Casey Kim (Manager)", status: "Reversed" },
-  ];
+  const { data: auditData, isLoading: auditLoading } = useGetAgentTodayAuditQuery({ agentId: correctAgent?.id, date }, {
+    skip: !correctAgent?.id,
+  });
+  
+  const transactions = auditData?.data?.map((tx: any) => ({
+    id: tx.id,
+    count: tx.amount,
+    time: new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    by: tx.manager?.name || "Unknown",
+    status: tx.status === "REVERSED" ? "Reversed" : "Confirmed",
+    auditLogs: tx.auditLogs || []
+  })) || [];
+
+  const agents = agentsList.map((agent: any) => ({
+    id: agent.id,
+    name: agent.name,
+    initials: agent.name ? agent.name.substring(0, 2).toUpperCase() : "A",
+    today: agent.salesToday || 0,
+    week: agent.salesWeek || 0,
+    trend: agent.trend || [0, 0, 0, 0, 0, 0, 0],
+  }));
+  
+  const isComponentLoading = isLoading || queryLoading;
 
   const handleOpenAddSale = (agent: any) => {
     setSelectedAgent(agent);
@@ -43,31 +68,53 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
     setIsAdding(false);
   };
 
-  const handleConfirmAddSale = () => {
+  const handleConfirmAddSale = async () => {
+    if (!selectedAgent) return;
     setIsAdding(true);
-    setTimeout(() => {
-      toast.success(`A demo sale added successfully for ${selectedAgent?.name}`);
+    try {
+      const todayIso = new Date().toISOString();
+      
+      await addDailySales({
+        agentId: selectedAgent.id,
+        date: todayIso,
+        salesCount: saleCount
+      }).unwrap();
+      
+      toast.success(`${saleCount} sale(s) added successfully for ${selectedAgent.name}`);
       setSelectedAgent(null);
+    } catch (error) {
+      toast.error("Failed to add sale");
+    } finally {
       setIsAdding(false);
-    }, 800);
+    }
   };
 
-  const handleConfirmReverse = () => {
+  const handleConfirmReverse = async () => {
+    if (!reverseSale || !correctAgent) return;
     setIsProcessing(true);
-    setTimeout(() => {
-      toast.success(`Sale reversed for ${correctAgent?.name}`);
+    try {
+      await reverseSaleMutation(reverseSale.id).unwrap();
+      toast.success(`Sale reversed for ${correctAgent.name}`);
       setReverseSale(null);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to reverse sale");
+    } finally {
       setIsProcessing(false);
-    }, 800);
+    }
   };
 
-  const handleConfirmEdit = () => {
+  const handleConfirmEdit = async () => {
+    if (!editSale || !correctAgent) return;
     setIsProcessing(true);
-    setTimeout(() => {
-      toast.success(`Sale count updated for ${correctAgent?.name}`);
+    try {
+      await editSaleMutation({ auditId: editSale.id, newCount: editCount }).unwrap();
+      toast.success(`Sale count updated for ${correctAgent.name}`);
       setEditSale(null);
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to edit sale");
+    } finally {
       setIsProcessing(false);
-    }, 800);
+    }
   };
 
   return (
@@ -76,7 +123,7 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
         
         {/* Mobile View: Cards */}
         <div className="flex flex-col xl:hidden divide-y divide-zinc-100">
-          {isLoading ? (
+          {isComponentLoading ? (
             Array.from({ length: 6 }).map((_, idx) => (
               <div key={idx} className="p-4 animate-pulse">
                 <div className="flex items-center gap-3 mb-3">
@@ -99,7 +146,7 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                 </div>
               </div>
             ))
-          ) : agents.map((agent) => (
+          ) : agents.map((agent: any) => (
             <div key={agent.id} className="p-4 hover:bg-zinc-50/50 transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
@@ -112,8 +159,8 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                   </div>
                 </div>
                 <div className="flex items-end gap-1 h-8">
-                  {[4, 6, 3, 7, 5, 8, 4].map((h, i) => (
-                    <div key={i} className="w-1.5 bg-[#9494ff] rounded-full" style={{ height: `${Math.max(30, h * 12)}%` }}></div>
+                  {agent.trend.map((h: number, i: number) => (
+                    <div key={i} className="w-1.5 bg-[#9494ff] rounded-full" style={{ height: h === 0 ? '20%' : `${Math.min(100, 20 + (h * 20))}%` }}></div>
                   ))}
                 </div>
               </div>
@@ -160,7 +207,7 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-100">
-            {isLoading ? (
+            {isComponentLoading ? (
               // Skeleton Rows
               Array.from({ length: 6 }).map((_, idx) => (
                 <tr key={idx} className="animate-pulse">
@@ -181,7 +228,7 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                   </td>
                 </tr>
               ))
-            ) : agents.map((agent) => (
+            ) : agents.map((agent: any) => (
               <tr key={agent.id} className="hover:bg-zinc-50/80 transition-colors group">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-3">
@@ -195,9 +242,9 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                 <td className="px-4 py-3 text-center text-zinc-500">{agent.week}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-end justify-center gap-1.5 h-8">
-                    {/* Mock Trend Bars */}
-                    {[4, 6, 3, 7, 5, 8, 4].map((h, i) => (
-                      <div key={i} className="w-2.5 bg-[#9494ff] rounded-full" style={{ height: `${Math.max(30, h * 12)}%` }}></div>
+                    {/* Real Trend Bars */}
+                    {agent.trend.map((h: number, i: number) => (
+                      <div key={i} className="w-2.5 bg-[#9494ff] rounded-full" style={{ height: h === 0 ? '20%' : `${Math.min(100, 20 + (h * 20))}%` }}></div>
                     ))}
                   </div>
                 </td>
@@ -266,11 +313,11 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
 
       {/* Correction Sidebar Overlay */}
       {correctAgent && (
-        <div className="fixed inset-0 z-[60] bg-black/20 backdrop-blur-sm" onClick={() => setCorrectAgent(null)} />
+        <div className="fixed inset-0 z-[999] bg-black/20 backdrop-blur-sm" onClick={() => { setCorrectAgent(null); setExpandedTx(null); }} />
       )}
 
       {/* Correction Sidebar Panel */}
-      <div className={`fixed inset-y-0 right-0 z-[70] w-full sm:w-[420px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${correctAgent ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 z-[1000] w-full sm:w-[420px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out flex flex-col ${correctAgent ? 'translate-x-0' : 'translate-x-full'}`}>
         {correctAgent && (
           <>
             <div className="pt-6 sm:pt-8 px-5 sm:px-8 pb-4 sm:pb-6 relative">
@@ -290,7 +337,7 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                     {correctAgent.name} — Today's Sales
                   </h3>
                   <p className="text-xs sm:text-sm text-zinc-500 truncate">
-                    3 transactions today • {correctAgent.today} total sales
+                    {transactions.length} transactions today • {correctAgent.today} total sales
                   </p>
                 </div>
               </div>
@@ -302,7 +349,15 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
 
             <div className="flex-1 overflow-y-auto px-5 sm:px-8">
               <div className="space-y-6">
-                {mockTransactions.map((tx, idx) => (
+                {auditLoading ? (
+                  <div className="flex justify-center p-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-[#5252ff]" />
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div className="text-center p-8 text-zinc-500 text-sm">
+                    No transactions found for today.
+                  </div>
+                ) : transactions.map((tx: any, idx: number) => (
                   <div key={tx.id} className="relative">
                     <div className="flex justify-between items-center">
                       <div>
@@ -320,14 +375,12 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                         </span>
                       ) : (
                         <div className="flex items-center gap-4">
-                          {tx.count > 1 && (
-                            <button 
-                              onClick={() => { setEditSale(tx); setEditCount(tx.count); }}
-                              className="text-[#5252ff] cursor-pointer hover:text-[#4242e5] font-medium text-sm transition-colors"
-                            >
-                              Edit
-                            </button>
-                          )}
+                          <button 
+                            onClick={() => { setEditSale(tx); setEditCount(tx.count); }}
+                            className="text-[#5252ff] cursor-pointer hover:text-[#4242e5] font-medium text-sm transition-colors"
+                          >
+                            Edit
+                          </button>
                           <button 
                             onClick={() => setReverseSale(tx)}
                             className="bg-[#e11d48] hover:bg-[#be123c] cursor-pointer text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
@@ -338,8 +391,48 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                       )}
                     </div>
                     
+                    {/* Collapsible History Dropdown */}
+                    {tx.auditLogs && tx.auditLogs.length > 0 && (
+                      <div className="mt-3">
+                        <button
+                          onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)}
+                          className="text-xs font-medium text-zinc-500 hover:text-zinc-700 flex items-center gap-1 cursor-pointer transition-colors"
+                        >
+                          {expandedTx === tx.id ? "Hide History" : "View History"}
+                          <svg className={`w-3 h-3 transition-transform ${expandedTx === tx.id ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                        
+                        {expandedTx === tx.id && (
+                          <div className="mt-2 pl-3 border-l-2 border-zinc-200 space-y-3">
+                            {tx.auditLogs.map((log: any) => (
+                              <div key={log.id} className="text-[13px]">
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className={`font-semibold ${log.action === 'ADDED' ? 'text-green-600' : log.isReversed ? 'text-red-600' : 'text-blue-600'}`}>
+                                    {log.action === 'ADDED' ? 'Added' : log.isReversed ? 'Reversed' : 'Edited'}
+                                  </span>
+                                  <span className="text-zinc-400 text-xs">• {new Date(log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                <div className="text-zinc-600">
+                                  {log.action === 'ADDED' ? (
+                                    <>Original count: <b>{log.newAmount}</b></>
+                                  ) : log.isReversed ? (
+                                    <>Count was <b>{log.previousAmount}</b> before reversal</>
+                                  ) : (
+                                    <>Changed from <b>{log.previousAmount}</b> to <b>{log.newAmount}</b></>
+                                  )}
+                                </div>
+                                <div className="text-zinc-400 text-xs mt-0.5">by {log.manager?.name || "Unknown"}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     {/* Add border bottom except for last item */}
-                    {idx < mockTransactions.length - 1 && (
+                    {idx < transactions.length - 1 && (
                       <div className="w-full h-px bg-zinc-100 mt-6"></div>
                     )}
                   </div>
@@ -348,7 +441,7 @@ export function AgentsTable({ isLoading }: AgentsTableProps) {
                 {/* Close Button at bottom of list */}
                 <div className="p-5 sm:p-8 border-t border-zinc-100 mt-4 shrink-0">
                   <button 
-                    onClick={() => setCorrectAgent(null)}
+                    onClick={() => { setCorrectAgent(null); setExpandedTx(null); }}
                     className="w-full py-3 bg-[#eef0ff] hover:bg-[#e0e4ff] text-[#5252ff] font-bold rounded-xl transition-colors cursor-pointer"
                   >
                     Close

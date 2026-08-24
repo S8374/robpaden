@@ -64,3 +64,7 @@ ame optional in UserManagementDTO and assigned a dynamic email prefix fallback f
 --> Increased sizing and visibility of TV Footer Action Cards while balancing the "POSITIVE ATTITUDE..." motto to prevent wrapping.
 --> Improved visual whitespace in the TV Leaderboard to eliminate vertical squishing between rows.
 --> Rounded the monthly progress bar in the TV Board Team Goal block for a modern pill-shape look.
+--> Implemented Agent Sales Correction functionality, allowing managers to reverse or edit specific sales transactions directly from the dashboard sidebar.
+--> Implemented Agent Sales Correction functionality, allowing managers to reverse or edit specific sales transactions directly from the dashboard sidebar.
+--> Created new backend endpoints (`/audit-today`, `/reverse`, `/edit`) and dynamically linked them to the frontend using Redux RTK Query.
+--> Migrated the entire Sales architecture to use the actual `Sale` table instead of the `SalesAuditLog`, ensuring that adding, reversing, and editing sales properly updates individual `Sale` records and correctly increments/decrements `PerformanceRecord` totals.

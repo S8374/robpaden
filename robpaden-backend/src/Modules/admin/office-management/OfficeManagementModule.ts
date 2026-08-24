@@ -41,11 +41,7 @@ export class OfficeManagementModule extends BaseModule {
       controller.getOffices.bind(controller)
     );
 
-    // GET /admin/v1/offices/stats
-    this.router.get(
-      "/stats",
-      controller.getOfficeStats.bind(controller)
-    );
+
 
     // PATCH /admin/v1/offices/:id
     this.router.patch(

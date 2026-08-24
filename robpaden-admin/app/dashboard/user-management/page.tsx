@@ -26,6 +26,7 @@ export default function UsersPage() {
     password: "",
     role: "MANAGER",
     companyId: "",
+    managerId: "",
     agentLimit: ""
   });
   const [errorMsg, setErrorMsg] = useState("");
@@ -34,6 +35,7 @@ export default function UsersPage() {
 
   const users = usersData?.data || [];
   const offices = officesData?.data || [];
+  const managersList = users.filter((u: any) => u.role === "MANAGER");
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,6 +49,11 @@ export default function UsersPage() {
     
     if (formData.role === "MANAGER" && !formData.companyId) {
       setErrorMsg("A Manager must be assigned to an office.");
+      return;
+    }
+    
+    if (formData.role === "AGENT" && !formData.managerId) {
+      setErrorMsg("An Agent must be assigned to a Manager.");
       return;
     }
     
@@ -65,6 +72,14 @@ export default function UsersPage() {
         }
       }
       
+      if (formData.role === "AGENT" && formData.managerId) {
+        payload.managerId = parseInt(formData.managerId);
+        const selectedManager = managersList.find((m: any) => m.id === payload.managerId);
+        if (selectedManager?.companyId) {
+          payload.companyId = selectedManager.companyId;
+        }
+      }
+      
       const res = await createUser(payload).unwrap();
       
       if (res.success) {
@@ -75,6 +90,7 @@ export default function UsersPage() {
           password: "",
           role: "MANAGER",
           companyId: "",
+          managerId: "",
           agentLimit: ""
         });
         setTimeout(() => {
@@ -96,6 +112,7 @@ export default function UsersPage() {
       password: "",
       role: "MANAGER",
       companyId: "",
+      managerId: "",
       agentLimit: ""
     });
     setErrorMsg("");
@@ -111,6 +128,7 @@ export default function UsersPage() {
       password: user.password || "", // prefill decrypted password
       role: user.role,
       companyId: user.companyId ? String(user.companyId) : "",
+      managerId: user.managerId ? String(user.managerId) : "",
       agentLimit: user.agentLimit ? String(user.agentLimit) : ""
     });
     setErrorMsg("");
@@ -122,6 +140,11 @@ export default function UsersPage() {
     e.preventDefault();
     setErrorMsg("");
     
+    if (formData.role === "AGENT" && !formData.managerId) {
+      setErrorMsg("An Agent must be assigned to a Manager.");
+      return;
+    }
+
     try {
       const payload: any = {
         name: formData.name,
@@ -129,8 +152,16 @@ export default function UsersPage() {
         password: formData.password,
         role: formData.role,
         companyId: formData.role === "MANAGER" && formData.companyId ? parseInt(formData.companyId) : null,
-        agentLimit: formData.role === "MANAGER" && formData.agentLimit ? parseInt(formData.agentLimit) : null
+        agentLimit: formData.role === "MANAGER" && formData.agentLimit ? parseInt(formData.agentLimit) : null,
+        managerId: formData.role === "AGENT" && formData.managerId ? parseInt(formData.managerId) : null
       };
+      
+      if (formData.role === "AGENT" && formData.managerId) {
+        const selectedManager = managersList.find((m: any) => m.id === payload.managerId);
+        if (selectedManager?.companyId) {
+          payload.companyId = selectedManager.companyId;
+        }
+      }
       
       const res = await updateUser({ id: selectedUser.id, data: payload }).unwrap();
       if (res.success) {
@@ -172,7 +203,7 @@ export default function UsersPage() {
         <div className="flex gap-3">
           <button 
             onClick={openCreateModal}
-            className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2"
+            className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             Create User
@@ -180,7 +211,7 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col">
+      <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm flex-1 flex flex-col">
         <div className="p-4 border-b border-zinc-100 flex items-center justify-between gap-4">
           <div className="relative w-full max-w-sm">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -191,11 +222,11 @@ export default function UsersPage() {
             />
           </div>
           <div className="flex items-center gap-2">
-             <button className="text-sm font-medium text-zinc-600 bg-white border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50">Filter Role</button>
+             <button className="text-sm font-medium text-zinc-600 bg-white border border-zinc-200 px-3 py-1.5 rounded-lg hover:bg-zinc-50 cursor-pointer">Filter Role</button>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="w-full">
           <table className="w-full text-sm text-left">
             <thead className="text-[10px] font-bold text-zinc-400 uppercase bg-zinc-50/50">
               <tr>
@@ -275,7 +306,15 @@ export default function UsersPage() {
                     </td>
                     <td className="px-4 py-4">
                        <span className="font-medium text-zinc-700">
-                         {user.role === 'SUPER_ADMIN' ? 'All Access' : user.company?.name || user.manager?.company?.name || <span className="text-zinc-400 italic">Unassigned</span>}
+                         {user.role === 'SUPER_ADMIN' ? 'All Access' : user.company?.name || user.manager?.company?.name || (
+                           user.role === 'MANAGER' ? (
+                             <button onClick={() => openEditModal(user)} className="text-[10px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors cursor-pointer inline-flex items-center gap-1">
+                               + Assign Office
+                             </button>
+                           ) : (
+                             <span className="text-zinc-400 italic">Unassigned</span>
+                           )
+                         )}
                        </span>
                     </td>
                     <td className="px-4 py-4">
@@ -293,7 +332,7 @@ export default function UsersPage() {
                       {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </td>
                     <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-3 relative">
+                      <div className={`flex items-center justify-end gap-3 relative ${openActionMenuId === user.id ? 'z-50' : 'z-0'}`}>
                         <Link 
                           href={`/dashboard/user-management/${user.id}`}
                           className="px-3 py-1.5 text-xs font-semibold text-white bg-zinc-900 hover:bg-zinc-800 rounded-md transition-colors"
@@ -304,29 +343,29 @@ export default function UsersPage() {
                         <div className="relative">
                           <button 
                             onClick={() => setOpenActionMenuId(openActionMenuId === user.id ? null : user.id)}
-                            className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-md transition-colors"
+                            className="p-1.5 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-md transition-colors cursor-pointer"
                           >
-                            <MoreVertical className="w-5 h-5" />
+                            <MoreVertical className="w-5 h-5 pointer-events-none" />
                           </button>
 
                           {openActionMenuId === user.id && (
                             <>
                               <div 
-                                className="fixed inset-0 z-1000" 
+                                className="fixed inset-0 z-40" 
                                 onClick={() => setOpenActionMenuId(null)}
                               ></div>
-                              <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-zinc-200 rounded-lg shadow-lg z-20 py-1 flex flex-col animate-in fade-in zoom-in-95 duration-100">
+                              <div className="absolute right-0 top-full mt-1 w-36 bg-white border border-zinc-200 rounded-lg shadow-lg z-50 py-1 flex flex-col animate-in fade-in zoom-in-95 duration-100">
                                 <button 
                                   onClick={() => { setOpenActionMenuId(null); handleToggleStatus(user); }}
                                   disabled={isToggling}
-                                  className="w-full text-left px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 hover:text-amber-600 flex items-center gap-2"
+                                  className="w-full text-left px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 hover:text-amber-600 flex items-center gap-2 cursor-pointer disabled:cursor-not-allowed"
                                 >
                                   {user.isActive ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                                   {user.isActive ? 'Block' : 'Unblock'}
                                 </button>
                                 <button 
                                   onClick={() => { setOpenActionMenuId(null); openEditModal(user); }}
-                                  className="w-full text-left px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 hover:text-blue-600 flex items-center gap-2"
+                                  className="w-full text-left px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50 hover:text-blue-600 flex items-center gap-2 cursor-pointer"
                                 >
                                   <Edit className="w-4 h-4" />
                                   Edit
@@ -334,7 +373,7 @@ export default function UsersPage() {
                                 <div className="border-t border-zinc-100 my-1"></div>
                                 <button 
                                   onClick={() => { setOpenActionMenuId(null); setSelectedUser(user); setIsDeleteModalOpen(true); }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                   Delete
@@ -361,7 +400,7 @@ export default function UsersPage() {
               <h2 className="text-lg font-bold text-zinc-900">Create New User</h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
-                className="text-zinc-400 hover:text-zinc-600 transition-colors p-1 rounded hover:bg-zinc-100"
+                className="text-zinc-400 hover:text-zinc-600 transition-colors p-1 rounded hover:bg-zinc-100 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -406,7 +445,7 @@ export default function UsersPage() {
                 <select 
                   id="role"
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value, companyId: "" })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value, companyId: "", managerId: "" })}
                   className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
                 >
                   <option value="MANAGER">Manager</option>
@@ -417,17 +456,46 @@ export default function UsersPage() {
               {formData.role === "MANAGER" && (
                 <div className="animate-in slide-in-from-top-2 duration-300">
                   <label htmlFor="companyId" className="block text-sm font-semibold text-zinc-700 mb-1.5">Assign to Office *</label>
-                  <select 
-                    id="companyId"
-                    value={formData.companyId}
-                    onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
-                  >
-                    <option value="" disabled>Select an Office</option>
-                    {offices.map((office: any) => (
-                      <option key={office.id} value={office.id}>{office.name}</option>
-                    ))}
-                  </select>
+                  {offices.length === 0 ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm">
+                      No offices available. <Link href="/dashboard/office-management" className="font-bold underline">Create an office</Link> first.
+                    </div>
+                  ) : (
+                    <select 
+                      id="companyId"
+                      value={formData.companyId}
+                      onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
+                    >
+                      <option value="" disabled>Select an Office</option>
+                      {offices.map((office: any) => (
+                        <option key={office.id} value={office.id}>{office.name}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {formData.role === "AGENT" && (
+                <div className="animate-in slide-in-from-top-2 duration-300">
+                  <label htmlFor="managerId" className="block text-sm font-semibold text-zinc-700 mb-1.5">Assign to Manager *</label>
+                  {managersList.length === 0 ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm">
+                      No managers available. Create a manager first.
+                    </div>
+                  ) : (
+                    <select 
+                      id="managerId"
+                      value={formData.managerId}
+                      onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
+                    >
+                      <option value="" disabled>Select a Manager</option>
+                      {managersList.map((manager: any) => (
+                        <option key={manager.id} value={manager.id}>{manager.name} ({manager.company?.name || "No Office"})</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
 
@@ -542,7 +610,7 @@ export default function UsersPage() {
                 <select 
                   id="edit-role"
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value, companyId: "" })}
+                  onChange={(e) => setFormData({ ...formData, role: e.target.value, companyId: "", managerId: "" })}
                   className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
                 >
                   <option value="MANAGER">Manager</option>
@@ -553,17 +621,46 @@ export default function UsersPage() {
               {formData.role === "MANAGER" && (
                 <div className="animate-in slide-in-from-top-2 duration-300">
                   <label htmlFor="edit-companyId" className="block text-sm font-semibold text-zinc-700 mb-1.5">Assign to Office *</label>
-                  <select 
-                    id="edit-companyId"
-                    value={formData.companyId}
-                    onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
-                  >
-                    <option value="" disabled>Select an Office</option>
-                    {offices.map((office: any) => (
-                      <option key={office.id} value={office.id}>{office.name}</option>
-                    ))}
-                  </select>
+                  {offices.length === 0 ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm">
+                      No offices available. <Link href="/dashboard/office-management" className="font-bold underline">Create an office</Link> first.
+                    </div>
+                  ) : (
+                    <select 
+                      id="edit-companyId"
+                      value={formData.companyId}
+                      onChange={(e) => setFormData({ ...formData, companyId: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
+                    >
+                      <option value="" disabled>Select an Office</option>
+                      {offices.map((office: any) => (
+                        <option key={office.id} value={office.id}>{office.name}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              )}
+
+              {formData.role === "AGENT" && (
+                <div className="animate-in slide-in-from-top-2 duration-300">
+                  <label htmlFor="edit-managerId" className="block text-sm font-semibold text-zinc-700 mb-1.5">Assign to Manager *</label>
+                  {managersList.length === 0 ? (
+                    <div className="p-3 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-sm">
+                      No managers available. Create a manager first.
+                    </div>
+                  ) : (
+                    <select 
+                      id="edit-managerId"
+                      value={formData.managerId}
+                      onChange={(e) => setFormData({ ...formData, managerId: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
+                    >
+                      <option value="" disabled>Select a Manager</option>
+                      {managersList.map((manager: any) => (
+                        <option key={manager.id} value={manager.id}>{manager.name} ({manager.company?.name || "No Office"})</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
 

@@ -136,7 +136,7 @@ export function Sidebar() {
 
     {/* Logout Confirmation Modal */}
     {isLogoutModalOpen && (
-      <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
         <div className="bg-white rounded-xl shadow-xl w-full max-w-[360px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
           <div className="px-6 py-6 text-center flex flex-col items-center">
             <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">

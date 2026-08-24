@@ -3,9 +3,10 @@ import { baseApi } from "@/redux/baseApi";
 const agentApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAgents: builder.query({
-      query: () => ({
+      query: (params?: { date?: string }) => ({
         url: "/manager/agents",
         method: "GET",
+        params
       }),
       providesTags: ["Agent"],
     }),
@@ -42,6 +43,45 @@ const agentApi = baseApi.injectEndpoints({
         },
       }),
     }),
+    addDailySales: builder.mutation({
+      query: (data) => ({
+        url: "/manager/performance/daily-sales",
+        method: "POST",
+        data,
+      }),
+      invalidatesTags: ["Agent", "Dashboard", "AgentAudit"], // Refresh agents list, dashboard, and agent audit list
+    }),
+    getAgentTodayAudit: builder.query({
+      query: ({ agentId, date }) => ({
+        url: `/manager/performance/agent/${agentId}/audit-today`,
+        method: "GET",
+        params: date ? { date } : undefined
+      }),
+      providesTags: (result, error, { agentId }) => [{ type: "AgentAudit", id: agentId }],
+    }),
+    reverseSale: builder.mutation({
+      query: (auditId) => ({
+        url: `/manager/performance/audit/${auditId}/reverse`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, auditId) => ["Agent", "AgentAudit", "Dashboard"],
+    }),
+    editSale: builder.mutation({
+      query: ({ auditId, newCount }) => ({
+        url: `/manager/performance/audit/${auditId}/edit`,
+        method: "POST",
+        data: { newCount },
+      }),
+      invalidatesTags: (result, error, { auditId }) => ["Agent", "AgentAudit", "Dashboard"],
+    }),
+    getManagerDashboard: builder.query({
+      query: (params?: { date?: string }) => ({
+        url: "/manager/performance/dashboard",
+        method: "GET",
+        params
+      }),
+      providesTags: ["Dashboard"],
+    }),
   }),
 });
 
@@ -50,5 +90,10 @@ export const {
   useAddAgentMutation,
   useUpdateAgentMutation,
   useDeleteAgentMutation,
-  useUploadFileMutation
+  useUploadFileMutation,
+  useAddDailySalesMutation,
+  useGetAgentTodayAuditQuery,
+  useReverseSaleMutation,
+  useEditSaleMutation,
+  useGetManagerDashboardQuery
 } = agentApi;

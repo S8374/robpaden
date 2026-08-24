@@ -2,12 +2,14 @@
 import { AppLogger } from "@/core/logging/logger";
 import { ConflictError, NotFoundError } from "@/core/errors/AppError";
 import { PrismaClient } from "@prisma/client";
-import { decryptPassword } from "@/core/utils/encryption";
+import { decryptPassword, encryptPassword } from "@/core/utils/encryption";
 import jwt from "jsonwebtoken";
 import config from "@/core/config";
+import { EmailService } from "@/core/services/email.service";
 
 export class AuthServices {
   private logger = new AppLogger("AuthServices");
+  private emailService = new EmailService();
 
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -129,5 +131,90 @@ export class AuthServices {
       name: company.name,
       logoUrl: company.settings?.logoUrl || null,
     };
+  }
+
+  public async forgotPassword(email: string) {
+    this.logger.info("Processing forgot password request", { email });
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      // Don't leak that the user doesn't exist, just return success
+      return true;
+    }
+    
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 15);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordOtp: otp,
+        resetPasswordOtpExpiry: expiry,
+      }
+    });
+
+    await this.emailService.sendPasswordResetOtp(email, otp, user.name);
+    return true;
+  }
+
+  public async verifyOtp(email: string, otp: string) {
+    this.logger.info("Verifying OTP for password reset", { email });
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new NotFoundError("Invalid OTP");
+
+    if (user.resetPasswordOtp !== otp) {
+      throw new ConflictError("Invalid OTP");
+    }
+
+    if (!user.resetPasswordOtpExpiry || user.resetPasswordOtpExpiry < new Date()) {
+      throw new ConflictError("OTP has expired");
+    }
+
+    // Clear OTP and issue reset token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordOtp: null,
+        resetPasswordOtpExpiry: null,
+      }
+    });
+
+    if (!config.security.jwt.secret) {
+      throw new Error("JWT_SECRET is not configured");
+    }
+
+    const resetToken = jwt.sign(
+      { userId: user.id, purpose: "reset_password" },
+      config.security.jwt.secret,
+      { expiresIn: "15m" }
+    );
+
+    return resetToken;
+  }
+
+  public async resetPassword(token: string, newPassword: string) {
+    this.logger.info("Processing password reset");
+    try {
+      if (!config.security.jwt.secret) {
+        throw new Error("JWT_SECRET is not configured");
+      }
+
+      const decoded = jwt.verify(token, config.security.jwt.secret) as { userId: number, purpose: string };
+      if (decoded.purpose !== "reset_password") {
+        throw new ConflictError("Invalid token purpose");
+      }
+
+      const encryptedPassword = encryptPassword(newPassword);
+
+      await this.prisma.user.update({
+        where: { id: decoded.userId },
+        data: { password: encryptedPassword }
+      });
+
+      return true;
+    } catch (error) {
+      throw new ConflictError("Invalid or expired token");
+    }
   }
 }

@@ -5,9 +5,7 @@ model Company {
   settings CompanySettings?
 
   users       User[]
-  reports     Report[]
   invitations Invitation[]
-
 
   performanceRecords PerformanceRecord[] @relation("CompanyPerformance")
 
@@ -34,4 +32,5 @@ model CompanySettings {
   celebrationStyle String   @default("default")
   tvTheme          String   @default("dark")
   reportRecipients String[]
+  isReportGenerationActive Boolean @default(true)
 }

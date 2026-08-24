@@ -21,13 +21,6 @@ export interface Office {
   agents?: { id: number; name: string }[];
 }
 
-export interface OfficeStats {
-  totalOffices: number;
-  activeManagers: number;
-  totalAgents: number;
-  activeTVBoards: number;
-}
-
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -44,21 +37,14 @@ const officeApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Offices"],
     }),
-    getOfficeStats: builder.query<ApiResponse<OfficeStats>, void>({
-      query: () => ({
-        url: "/admin/v1/offices/stats",
-        method: "GET",
-      }),
-      providesTags: ["OfficeStats"],
-    }),
+
     createOffice: builder.mutation<ApiResponse<any>, FormData>({
       query: (payload) => ({
         url: "/admin/v1/offices",
         method: "POST",
         data: payload,
       }),
-      // Invalidate both the list and the stats so they refetch automatically
-      invalidatesTags: ["Offices", "OfficeStats"],
+      invalidatesTags: ["Offices", "DashboardStats"],
     }),
     updateOffice: builder.mutation<ApiResponse<any>, { id: number; data: FormData }>({
       query: ({ id, data }) => ({
@@ -66,21 +52,20 @@ const officeApi = baseApi.injectEndpoints({
         method: "PATCH",
         data: data,
       }),
-      invalidatesTags: ["Offices", "OfficeStats"],
+      invalidatesTags: ["Offices", "DashboardStats"],
     }),
     deleteOffice: builder.mutation<ApiResponse<any>, number>({
       query: (id) => ({
         url: `/admin/v1/offices/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Offices", "OfficeStats"],
+      invalidatesTags: ["Offices", "DashboardStats"],
     }),
   }),
 });
 
 export const {
   useGetOfficesQuery,
-  useGetOfficeStatsQuery,
   useCreateOfficeMutation,
   useUpdateOfficeMutation,
   useDeleteOfficeMutation,

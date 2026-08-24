@@ -37,7 +37,8 @@ export class ManagerAgentController extends BaseController {
       throw new AuthorizationError("Invalid user context");
     }
 
-    const agents = await this.managerAgentService.getMyAgents(managerId);
+    const { date } = req.query;
+    const agents = await this.managerAgentService.getMyAgents(managerId, date as string);
 
     return this.sendResponse(req, res, "Agents retrieved successfully", 200, agents);
   }

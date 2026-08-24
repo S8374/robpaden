@@ -64,6 +64,14 @@ export class UserManagementService {
       }
     });
 
+    await this.prisma.systemActivity.create({
+      data: {
+        action: data.role === 'MANAGER' ? 'Manager Added' : 'Agent Added',
+        entityName: `${userName} (${companyName})`,
+        iconType: data.role === 'MANAGER' ? 'Users' : 'UsersRound'
+      }
+    });
+
     // Send welcome email with the raw password
     const emailSent = await this.emailService.sendWelcomeEmail(
       data.email, 
@@ -96,7 +104,6 @@ export class UserManagementService {
       },
       include: {
         company: true,
-        team: true
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -104,6 +111,9 @@ export class UserManagementService {
     return users.map(user => {
       if (user.password) {
         user.password = decryptPassword(user.password);
+        if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
+          user.password = ""; // Do not send bcrypt hashes to frontend
+        }
       }
       return user;
     });
@@ -114,18 +124,23 @@ export class UserManagementService {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        company: {
-          include: {
-            teams: {
-              include: {
-                members: { select: { id: true, name: true, email: true, teamRole: true, isActive: true } }
-              }
-            }
+        company: true,
+        manager: { select: { id: true, name: true, email: true } },
+        performanceRecords: {
+          orderBy: { startDate: 'desc' }
+        },
+        agents: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            isActive: true,
+            dailyGoal: true,
+            weeklyGoal: true,
+            monthlyGoal: true,
+            performanceRecords: true // Fetch all records to calculate on the fly
           }
         },
-        team: true,
-        manager: { select: { id: true, name: true, email: true } },
-        agents: { select: { id: true, name: true, email: true, isActive: true, teamId: true } },
       }
     });
 
@@ -133,8 +148,86 @@ export class UserManagementService {
 
     if (user.password) {
       user.password = decryptPassword(user.password);
+      if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
+        user.password = ""; // Do not send bcrypt hashes to frontend
+      }
     }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const todayTime = now.getTime();
     
+    const day = now.getDay();
+    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+    const startOfWeekDate = new Date(now);
+    startOfWeekDate.setDate(diff);
+    const startOfWeekTime = startOfWeekDate.getTime();
+    
+    const startOfMonthDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonthTime = startOfMonthDate.getTime();
+
+    if (user.agents && user.agents.length > 0) {
+      user.agents = user.agents.map((agent: any) => {
+        let dailySales = 0;
+        let weeklySales = 0;
+        let monthlySales = 0;
+
+        agent.performanceRecords.forEach((record: any) => {
+          const recordTime = new Date(record.startDate).getTime();
+
+          if (record.period === 'DAILY' && recordTime === todayTime) {
+            dailySales = record.salesCount;
+          }
+          if (record.period === 'WEEKLY' && recordTime === startOfWeekTime) {
+            weeklySales = record.salesCount;
+          }
+          if (record.period === 'MONTHLY' && recordTime === startOfMonthTime) {
+            monthlySales = record.salesCount;
+          }
+        });
+
+        return {
+          ...agent,
+          performance: {
+            daily: dailySales,
+            weekly: weeklySales,
+            monthly: monthlySales
+          },
+          performanceRecords: undefined // exclude from payload
+        };
+      }) as any;
+    }
+
+    if (user.role === "AGENT" && (user as any).performanceRecords) {
+      let dailySales = 0;
+      let weeklySales = 0;
+      let monthlySales = 0;
+
+      (user as any).performanceRecords.forEach((record: any) => {
+        const recordTime = new Date(record.startDate).getTime();
+
+        if (record.period === 'DAILY' && recordTime === todayTime) {
+          dailySales = record.salesCount;
+        }
+        if (record.period === 'WEEKLY' && recordTime === startOfWeekTime) {
+          weeklySales = record.salesCount;
+        }
+        if (record.period === 'MONTHLY' && recordTime === startOfMonthTime) {
+          monthlySales = record.salesCount;
+        }
+      });
+
+      (user as any).performance = {
+        daily: dailySales,
+        weekly: weeklySales,
+        monthly: monthlySales
+      };
+      
+      // Filter performance records to only show DAILY history in the UI
+      (user as any).performanceRecords = (user as any).performanceRecords.filter(
+        (r: any) => r.period === 'DAILY'
+      );
+    }
+
     return user;
   }
 
@@ -170,13 +263,22 @@ export class UserManagementService {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundError("User not found");
 
-    // Check if user is MANAGER and has associated offices or agents
-    if (user.role === 'MANAGER') {
-       // Depending on business logic, we might need to detach or reassign
-       // Prisma will handle constraints, but we can just let it cascade or fail
-    }
+    await this.prisma.$transaction(async (tx) => {
+      // Delete child records manually to avoid foreign key constraint errors
+      await tx.sale.deleteMany({ where: { OR: [{ agentId: id }, { managerId: id }] } });
+      await tx.performanceRecord.deleteMany({ where: { agentId: id } });
+      await tx.salesAuditLog.deleteMany({ where: { OR: [{ agentId: id }, { managerId: id }] } });
+      await tx.agentActivityLog.deleteMany({ where: { OR: [{ agentId: id }, { managerId: id }] } });
+      await tx.reportHistory.deleteMany({ where: { managerId: id } });
+      await tx.reportRecipient.deleteMany({ where: { managerId: id } });
+      await tx.invitation.deleteMany({ where: { invitedById: id } });
+      
+      // Detach agents from this manager if user is a manager
+      await tx.user.updateMany({ where: { managerId: id }, data: { managerId: null } });
 
-    await this.prisma.user.delete({ where: { id } });
+      await tx.user.delete({ where: { id } });
+    });
+    
     return { success: true };
   }
 
@@ -219,5 +321,111 @@ export class UserManagementService {
       totalAgents,
       pendingInvitations
     };
+  }
+
+  public async getManagerActivityTimeline(managerId: number) {
+    this.logger.info("Fetching activity timeline for manager", { managerId });
+
+    // 1. Fetch Sales Audit Logs
+    const salesLogs = await this.prisma.salesAuditLog.findMany({
+      where: { managerId },
+      include: { agent: { select: { name: true } } }
+    });
+
+    // 2. Fetch Agent Activity Logs
+    const agentLogs = await this.prisma.agentActivityLog.findMany({
+      where: { managerId },
+      include: { agent: { select: { name: true } } }
+    });
+
+    // 3. Map and unify the timeline
+    const timeline: any[] = [];
+
+    salesLogs.forEach(log => {
+      timeline.push({
+        type: 'SALE',
+        action: log.isReversed ? 'REVERSED' : log.action,
+        date: log.date,
+        agentId: log.agentId,
+        agentName: log.agent.name,
+        details: {
+          previousAmount: log.previousAmount,
+          newAmount: log.newAmount
+        }
+      });
+    });
+
+    agentLogs.forEach(log => {
+      let parsedDetails = {};
+      try {
+        if (log.details) parsedDetails = JSON.parse(log.details);
+      } catch (e) {}
+
+      timeline.push({
+        type: 'AGENT',
+        action: log.action,
+        date: log.date,
+        agentId: log.agentId,
+        agentName: log.agent.name,
+        details: parsedDetails
+      });
+    });
+
+    // 4. Sort chronologically (newest first)
+    timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return timeline;
+  }
+
+  public async getAgentActivityTimeline(agentId: number) {
+    this.logger.info("Fetching activity timeline for agent", { agentId });
+
+    // 1. Fetch Sales Audit Logs
+    const salesLogs = await this.prisma.salesAuditLog.findMany({
+      where: { agentId },
+      include: { manager: { select: { name: true } } }
+    });
+
+    // 2. Fetch Agent Activity Logs
+    const agentLogs = await this.prisma.agentActivityLog.findMany({
+      where: { agentId },
+      include: { manager: { select: { name: true } } }
+    });
+
+    // 3. Map and unify the timeline
+    const timeline: any[] = [];
+
+    salesLogs.forEach(log => {
+      timeline.push({
+        type: 'SALE',
+        action: log.isReversed ? 'REVERSED' : log.action,
+        date: log.date,
+        managerName: log.manager.name,
+        details: {
+          previousAmount: log.previousAmount,
+          newAmount: log.newAmount
+        }
+      });
+    });
+
+    agentLogs.forEach(log => {
+      let parsedDetails = {};
+      try {
+        if (log.details) parsedDetails = JSON.parse(log.details);
+      } catch (e) {}
+
+      timeline.push({
+        type: 'AGENT',
+        action: log.action,
+        date: log.date,
+        managerName: log.manager.name,
+        details: parsedDetails
+      });
+    });
+
+    // 4. Sort chronologically (newest first)
+    timeline.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return timeline;
   }
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, UserPlus } from "lucide-react";
-// import { useAddAgentMutation, useUploadFileMutation } from "@/redux/api/agent.api";
+import { useRef } from "react";
+import { useAddAgentMutation, useUploadFileMutation } from "@/redux/api/agent.api";
 
 interface AddAgentModalProps {
   isOpen: boolean;
@@ -8,21 +9,59 @@ interface AddAgentModalProps {
 }
 
 export function AddAgentModal({ isOpen, onClose }: AddAgentModalProps) {
-  /* --- ORIGINAL BACKEND LOGIC COMMENTED OUT FOR DEMO ---
   const [addAgent, { isLoading }] = useAddAgentMutation();
   const [uploadFile, { isLoading: isUploading }] = useUploadFileMutation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => { ... }
-  const handleSubmit = async (e: React.FormEvent) => { ... }
-  --------------------------------------------------------- */
-
   const [formData, setFormData] = useState({
     name: "",
-    role: "Sales Representative",
+    email: "",
+    password: "",
     dailyGoal: "",
     weeklyGoal: "",
+    monthlyGoal: "",
+    avatarUrl: "",
   });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+      try {
+        const res = await uploadFile(formDataUpload).unwrap();
+        if (res.data?.url) {
+          setFormData(prev => ({ ...prev, avatarUrl: res.data.url }));
+        }
+      } catch (err) {
+        console.error("Upload failed", err);
+        alert("Failed to upload photo");
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload: any = {
+        name: formData.name,
+        email: formData.email,
+        dailyGoal: formData.dailyGoal ? parseInt(formData.dailyGoal, 10) : undefined,
+        weeklyGoal: formData.weeklyGoal ? parseInt(formData.weeklyGoal, 10) : undefined,
+        monthlyGoal: formData.monthlyGoal ? parseInt(formData.monthlyGoal, 10) : undefined,
+        avatarUrl: formData.avatarUrl,
+        password: formData.password || undefined,
+      };
+      await addAgent(payload).unwrap();
+      setFormData({ name: "", email: "", password: "", dailyGoal: "", weeklyGoal: "", monthlyGoal: "", avatarUrl: "" });
+      onClose();
+    } catch (err: any) {
+      console.error("Failed to add agent", err);
+      alert(err?.data?.error?.message || "Failed to add agent");
+    }
+  };
+
+
 
   if (!isOpen) return null;
 
@@ -50,32 +89,25 @@ export function AddAgentModal({ isOpen, onClose }: AddAgentModalProps) {
           <div>
             <label className="block text-xs font-semibold text-zinc-700 mb-2 uppercase tracking-wider">Agent Photo</label>
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-[#f0f4ff] text-[#5252ff] flex items-center justify-center font-bold text-xl shrink-0">
-                JM
-              </div>
-              <button className="text-[#5252ff] cursor-pointer hover:text-[#4242e5] font-semibold text-sm transition-colors">
-                Upload Photo
+              {formData.avatarUrl ? (
+                <img src={formData.avatarUrl} alt="Avatar" className="w-14 h-14 rounded-full object-cover shrink-0 border border-zinc-200" />
+              ) : (
+                <div className="w-14 h-14 rounded-full bg-[#f0f4ff] text-[#5252ff] flex items-center justify-center font-bold text-xl shrink-0">
+                  {formData.name ? formData.name.substring(0, 2).toUpperCase() : "A"}
+                </div>
+              )}
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="text-[#5252ff] cursor-pointer hover:text-[#4242e5] font-semibold text-sm transition-colors disabled:opacity-50"
+              >
+                {isUploading ? "Uploading..." : "Upload Photo"}
               </button>
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-zinc-700 mb-2 uppercase tracking-wider">Presets</label>
-            <div className="flex items-center gap-2">
-              {['AB', 'CD', 'EF', 'JH', 'GH', 'IJ'].map((preset, i) => (
-                <div 
-                  key={preset} 
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs cursor-pointer transition-colors ${
-                    preset === 'JH' 
-                      ? 'bg-[#5252ff] text-white ring-2 ring-[#5252ff] ring-offset-2' 
-                      : 'bg-white text-[#5252ff] border border-[#5252ff]/20 hover:bg-[#f0f4ff]'
-                  }`}
-                >
-                  {preset}
-                </div>
-              ))}
-            </div>
-          </div>
+
 
           <div className="space-y-4">
             <div>
@@ -90,19 +122,31 @@ export function AddAgentModal({ isOpen, onClose }: AddAgentModalProps) {
             </div>
             
             <div>
-               <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Role Title</label>
+               <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Email Address *</label>
                <input
-                 type="text"
-                 placeholder="Sales Representative"
+                 type="email"
+                 placeholder="agent@example.com"
                  className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all"
-                 value={formData.role}
-                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                 value={formData.email}
+                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                 required
+               />
+            </div>
+
+            <div>
+               <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Password (Optional - Auto-generated if left blank)</label>
+               <input
+                 type="password"
+                 placeholder="Leave blank to auto-generate"
+                 className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all"
+                 value={formData.password}
+                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                />
             </div>
             
             <div className="flex gap-4">
                <div className="flex-1">
-                 <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Daily Goal (Deals)</label>
+                 <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Daily Goal</label>
                  <input 
                    type="number" 
                    min="0"
@@ -113,13 +157,24 @@ export function AddAgentModal({ isOpen, onClose }: AddAgentModalProps) {
                  />
                </div>
                <div className="flex-1">
-                 <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Weekly Goal (Deals)</label>
+                 <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Weekly Goal</label>
                  <input 
                    type="number" 
                    min="0"
                    placeholder="e.g. 25" 
                    value={formData.weeklyGoal}
                    onChange={(e) => setFormData({ ...formData, weeklyGoal: e.target.value })}
+                   className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all" 
+                 />
+               </div>
+               <div className="flex-1">
+                 <label className="block text-xs font-semibold text-zinc-700 mb-1.5">Monthly Goal</label>
+                 <input 
+                   type="number" 
+                   min="0"
+                   placeholder="e.g. 100" 
+                   value={formData.monthlyGoal}
+                   onChange={(e) => setFormData({ ...formData, monthlyGoal: e.target.value })}
                    className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all" 
                  />
                </div>
@@ -134,12 +189,11 @@ export function AddAgentModal({ isOpen, onClose }: AddAgentModalProps) {
               Cancel
             </button>
             <button
-              onClick={() => {
-                onClose();
-              }}
-              className="bg-[#5252ff] cursor-pointer hover:bg-[#4242e5] text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors"
+              onClick={handleSubmit}
+              disabled={isLoading || isUploading}
+              className="bg-[#5252ff] cursor-pointer hover:bg-[#4242e5] text-white px-6 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors disabled:opacity-50"
             >
-              Add Agent
+              {isLoading ? "Adding..." : "Add Agent"}
             </button>
           </div>
         </div>

@@ -2,9 +2,10 @@ interface CloseDayModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  isGenerating?: boolean;
 }
 
-export function CloseDayModal({ isOpen, onClose, onConfirm }: CloseDayModalProps) {
+export function CloseDayModal({ isOpen, onClose, onConfirm, isGenerating }: CloseDayModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -21,23 +22,22 @@ export function CloseDayModal({ isOpen, onClose, onConfirm }: CloseDayModalProps
         
         <div className="text-center space-y-4 mb-8">
           <p className="text-zinc-600 text-[13px] leading-relaxed px-2">
-            This will finalize today&apos;s totals, generate the spreadsheet report, email it to 3 recipients, save a copy in Report History, and reset the board to zero for the next workday.
-          </p>
-          <p className="text-[#d62828] text-[12px] font-semibold leading-relaxed px-4">
-            This action cannot be undone. Historical totals will remain available in Reports, but today&apos;s live board will reset immediately.
+            This will finalize today&apos;s totals, generate the spreadsheet report, email it to your configured recipients, and save a copy in Report History.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row w-full gap-3">
           <button 
             onClick={onConfirm}
-            className="w-full sm:flex-[1.5] cursor-pointer px-4 py-3 bg-[#e11d48] hover:bg-[#be123c] text-white text-[13px] font-bold rounded-xl transition-colors shadow-sm"
+            disabled={isGenerating}
+            className="w-full sm:flex-[1.5] cursor-pointer px-4 py-3 bg-[#e11d48] hover:bg-[#be123c] text-white text-[13px] font-bold rounded-xl transition-colors shadow-sm disabled:opacity-50"
           >
-            Yes, Close Day
+            {isGenerating ? "Processing..." : "Yes, Close Day"}
           </button>
           <button 
             onClick={onClose}
-            className="w-full sm:flex-1 cursor-pointer px-4 py-3 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-[13px] font-bold rounded-xl transition-colors"
+            disabled={isGenerating}
+            className="w-full sm:flex-1 cursor-pointer px-4 py-3 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-[13px] font-bold rounded-xl transition-colors disabled:opacity-50"
           >
             Cancel
           </button>

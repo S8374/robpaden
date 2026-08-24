@@ -2,8 +2,9 @@ import { AppLogger } from "@/core/logging/logger";
 import { PrismaClient } from "@prisma/client";
 import { ConflictError, NotFoundError } from "@/core/errors/AppError";
 import { EmailService } from "@/core/services/email.service";
-import bcrypt from "bcrypt";
+import { encryptPassword, decryptPassword } from "@/core/utils/encryption";
 import { InviteAgentDTO } from "./ManagerAgentDTO";
+import { subDays, format } from "date-fns";
 
 export class ManagerAgentService {
   private logger = new AppLogger("ManagerAgentService");
@@ -50,8 +51,7 @@ export class ManagerAgentService {
     // Agents don't need a login password for the dashboard anymore.
     // They access a tokenized "Add Sales" page. We'll generate a random password for Prisma constraint.
     const rawPassword = data.password || Math.random().toString(36).slice(-10);
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(rawPassword, salt);
+    const hashedPassword = encryptPassword(rawPassword);
 
     const user = await this.prisma.user.create({
       data: {
@@ -65,6 +65,23 @@ export class ManagerAgentService {
         dailyGoal: data.dailyGoal,
         weeklyGoal: data.weeklyGoal,
         monthlyGoal: data.monthlyGoal,
+      }
+    });
+
+    await this.prisma.agentActivityLog.create({
+      data: {
+        action: "AGENT_ADDED",
+        agentId: user.id,
+        managerId,
+        details: JSON.stringify({ name: data.name })
+      }
+    });
+
+    await this.prisma.systemActivity.create({
+      data: {
+        action: "Agent Added",
+        entityName: `${data.name} (${manager?.name || 'Unknown'})`,
+        iconType: "UsersRound"
       }
     });
 
@@ -91,14 +108,73 @@ export class ManagerAgentService {
     };
   }
 
-  public async getMyAgents(managerId: number) {
-    this.logger.info("Fetching agents for manager", { managerId });
-    return this.prisma.user.findMany({
+  public async getMyAgents(managerId: number, dateStr?: string) {
+    this.logger.info("Fetching agents for manager", { managerId, dateStr });
+    
+    const today = new Date();
+    if (dateStr && dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        today.setFullYear(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+    }
+    today.setHours(0, 0, 0, 0);
+    
+    const startOfWeek = new Date(today);
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    startOfWeek.setDate(diff);
+
+    const sevenDaysAgo = subDays(today, 6);
+
+    const agents = await this.prisma.user.findMany({
       where: {
         managerId,
         role: "AGENT"
       },
+      include: {
+        performanceRecords: {
+          where: {
+            OR: [
+              { period: 'DAILY', startDate: { gte: sevenDaysAgo } },
+              { period: 'WEEKLY', startDate: startOfWeek }
+            ]
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
+    });
+
+    return agents.map(agent => {
+      if (agent.password) {
+        agent.password = decryptPassword(agent.password);
+        if (agent.password.startsWith("$2b$") || agent.password.startsWith("$2a$")) {
+          agent.password = ""; // Do not send bcrypt hashes to frontend
+        }
+      }
+      
+      const todayDateStr = format(today, 'yyyy-MM-dd');
+      const dailyRecord = (agent as any).performanceRecords?.find((r: any) => r.period === 'DAILY' && format(new Date(r.startDate), 'yyyy-MM-dd') === todayDateStr);
+      const weeklyRecord = (agent as any).performanceRecords?.find((r: any) => r.period === 'WEEKLY');
+      
+      const trend = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = subDays(today, i);
+        const dateString = format(d, 'yyyy-MM-dd');
+        const record = (agent as any).performanceRecords?.find((r: any) => 
+          r.period === 'DAILY' && format(new Date(r.startDate), 'yyyy-MM-dd') === dateString
+        );
+        trend.push(record?.salesCount || 0);
+      }
+      
+      const { performanceRecords, ...agentWithoutRecords } = agent as any;
+
+      return {
+        ...agentWithoutRecords,
+        salesToday: dailyRecord?.salesCount || 0,
+        salesWeek: weeklyRecord?.salesCount || 0,
+        trend
+      };
     });
   }
 
@@ -137,10 +213,21 @@ export class ManagerAgentService {
       throw new ConflictError("This agent is already assigned to another manager");
     }
 
-    return this.prisma.user.update({
+    const updatedAgent = await this.prisma.user.update({
       where: { id: agentId },
       data: { managerId }
     });
+
+    await this.prisma.agentActivityLog.create({
+      data: {
+        action: "AGENT_ADDED", // Treat assign as added to this manager's team
+        agentId,
+        managerId,
+        details: JSON.stringify({ name: agent.name, note: "Assigned to manager" })
+      }
+    });
+
+    return updatedAgent;
   }
 
   public async updateAgent(agentId: number, data: any, managerId: number) {
@@ -162,14 +249,47 @@ export class ManagerAgentService {
       monthlyGoal: data.monthlyGoal,
     };
 
+    if (data.email && data.email !== agent.email) {
+      const existingUser = await this.prisma.user.findUnique({
+        where: { email: data.email }
+      });
+      if (existingUser) {
+        throw new ConflictError("A user with this email already exists");
+      }
+      updateData.email = data.email;
+    }
+
+    if (data.password) {
+      updateData.password = encryptPassword(data.password);
+    }
+
     if (data.isActive !== undefined) {
       updateData.isActive = data.isActive;
     }
 
-    return this.prisma.user.update({
+    let action: any = "AGENT_UPDATED";
+    let actionDetails = "Updated agent profile";
+
+    if (data.isActive !== undefined && data.isActive !== agent.isActive) {
+      action = data.isActive ? "AGENT_ACTIVATED" : "AGENT_DEACTIVATED";
+      actionDetails = data.isActive ? "Activated agent" : "Deactivated agent";
+    }
+
+    const updated = await this.prisma.user.update({
       where: { id: agentId },
       data: updateData
     });
+
+    await this.prisma.agentActivityLog.create({
+      data: {
+        action,
+        agentId,
+        managerId,
+        details: JSON.stringify({ note: actionDetails })
+      }
+    });
+
+    return updated;
   }
 
   public async deleteAgent(agentId: number, managerId: number) {
@@ -185,6 +305,15 @@ export class ManagerAgentService {
 
     await this.prisma.user.delete({
       where: { id: agentId }
+    });
+
+    await this.prisma.agentActivityLog.create({
+      data: {
+        action: "AGENT_DEACTIVATED",
+        agentId,
+        managerId,
+        details: JSON.stringify({ note: "Deleted agent completely" })
+      }
     });
 
     return { message: "Agent successfully deleted" };

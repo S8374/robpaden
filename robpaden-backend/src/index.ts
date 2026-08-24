@@ -9,8 +9,10 @@ import { prisma } from "./lib/prisma";
 import { AuthModule } from "./Modules/Auth/AuthModule";
 import { AdminLoginModule } from "./Modules/admin/admin-login/AdminLoginModule";
 import { OfficeManagementModule } from "./Modules/admin/office-management/OfficeManagementModule";
+import { DashboardModule } from "./Modules/admin/dashboard/DashboardModule";
 import { UserManagementModule } from "./Modules/admin/user-management/UserManagementModule";
 import { ManagerModule } from "./Modules/Manager/ManagerModule";
+import { ReportModule } from "./Modules/Manager/report/ReportModule";
 import { TVModule } from "./Modules/TV/TVModule";
 
 // Modules (Business Logic)
@@ -37,8 +39,13 @@ async function bootstrap() {
     app.registerModule(authModule);
     app.registerModule(adminLoginModule);
     app.registerModule(officeManagementModule);
+    app.registerModule(new DashboardModule());
     app.registerModule(userManagementModule);
     app.registerModule(managerModule);
+    
+    const prismaService = app.getContext().getService("prisma");
+    app.registerModule(new ReportModule());
+    
     app.registerModule(new TVModule());
 
     AppLogger.info("✔ All modules registered successfully");

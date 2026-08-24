@@ -11,7 +11,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = sessionStorage.getItem("accessToken");
     if (!token) {
-      router.replace("/");
+      window.location.href = "/";
     } else {
       setIsAuthenticated(true);
     }

@@ -1,0 +1,17 @@
+meta {
+  name: Edit Sale
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/manager/performance/audit/1/edit
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "newCount": 5
+  }
+}

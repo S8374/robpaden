@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { AddAgentModal } from "./AddAgentModal";
 import { EditAgentModal } from "./EditAgentModal";
-// import { useUpdateAgentMutation, useDeleteAgentMutation } from "@/redux/api/agent.api";
-// import { MoreVertical, Trash2, Ban, UserCheck } from "lucide-react";
+import { useUpdateAgentMutation, useDeleteAgentMutation } from "@/redux/api/agent.api";
+import { MoreVertical, Trash2, Ban, UserCheck } from "lucide-react";
 
 interface AgentListTableProps {
   agents?: any[];
@@ -14,7 +14,6 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
   
   const [selectedEditAgent, setSelectedEditAgent] = useState<any>(null);
 
-  /* --- ORIGINAL LOGIC COMMENTED OUT FOR DEMO ---
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
   const [agentToDelete, setAgentToDelete] = useState<any>(null);
   const [agentToToggle, setAgentToToggle] = useState<any>(null);
@@ -55,17 +54,6 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
       alert("Failed to delete agent");
     }
   };
-  ----------------------------------------------- */
-
-  const mockAgents = [
-    { id: 1, name: "Jordan Lee", initials: "JL", status: "Active", goal: "20 sales/day", today: 24, week: 128 },
-    { id: 2, name: "Sam Patel", initials: "SP", status: "Active", goal: "20 sales/day", today: 22, week: 118 },
-    { id: 3, name: "Casey Kim", initials: "CK", status: "Active", goal: "16 sales/day", today: 19, week: 101 },
-    { id: 4, name: "Riley Chen", initials: "RC", status: "Active", goal: "15 sales/day", today: 16, week: 90 },
-    { id: 5, name: "Morgan Diaz", initials: "MD", status: "Active", goal: "15 sales/day", today: 14, week: 78 },
-    { id: 6, name: "Avery Brooks", initials: "AB", status: "Active", goal: "12 sales/day", today: 11, week: 60 },
-    { id: 7, name: "Taylor Reed", initials: "TR", status: "Inactive", goal: "12 sales/day", today: 0, week: 0 },
-  ];
 
   return (
     <div className="flex flex-col gap-6  mx-auto">
@@ -102,37 +90,44 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
                 </div>
               </div>
             ))
+          ) : agents && agents.length === 0 ? (
+            <div className="p-8 text-center text-zinc-500 font-medium">
+              No agents available
+            </div>
           ) : (
-            mockAgents.map((agent) => (
+            (agents || []).map((agent) => {
+              const initials = agent.name ? agent.name.substring(0, 2).toUpperCase() : "A";
+              const statusText = agent.isActive ? "Active" : "Inactive";
+              return (
               <div key={`mob-${agent.id}`} className="p-4 hover:bg-zinc-50/50 transition-colors">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#f0f4ff] text-[#5252ff] flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
-                      {agent.initials}
+                      {initials}
                     </div>
                     <span className="font-semibold text-zinc-900 text-[15px]">{agent.name}</span>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-[11px] font-semibold ${
-                    agent.status === "Active" 
+                    agent.isActive
                       ? "bg-[#e5fcf1] text-[#1f9d55]" 
                       : "bg-zinc-100 text-zinc-500"
                   }`}>
-                    {agent.status}
+                    {statusText}
                   </span>
                 </div>
                 
                 <div className="flex bg-zinc-50 rounded-xl p-3 mb-4">
                   <div className="flex-1 text-center border-r border-zinc-200">
                     <p className="text-[10px] font-bold text-zinc-400 uppercase mb-0.5">Today</p>
-                    <p className="text-xl font-bold text-zinc-900">{agent.today}</p>
+                    <p className="text-xl font-bold text-zinc-900">{agent.salesToday || 0}</p>
                   </div>
                   <div className="flex-1 text-center border-r border-zinc-200">
                     <p className="text-[10px] font-bold text-zinc-400 uppercase mb-0.5">Week</p>
-                    <p className="text-xl font-bold text-zinc-500">{agent.week}</p>
+                    <p className="text-xl font-bold text-zinc-500">{agent.salesWeek || 0}</p>
                   </div>
                   <div className="flex-1 text-center flex flex-col items-center justify-center px-1">
                     <p className="text-[10px] font-bold text-zinc-400 uppercase mb-0.5">Goal</p>
-                    <p className="text-[11px] font-medium text-zinc-600 leading-tight">{agent.goal}</p>
+                    <p className="text-[11px] font-medium text-zinc-600 leading-tight">{agent.dailyGoal || 0} /day</p>
                   </div>
                 </div>
 
@@ -143,18 +138,22 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
                   >
                     Edit
                   </button>
-                  {agent.status === "Active" ? (
-                    <button className="flex-[1.5] sm:flex-none sm:w-28 px-4 py-2.5 sm:py-2 cursor-pointer flex items-center justify-center bg-[#e11d48] hover:bg-[#be123c] text-white rounded-[6px] text-xs sm:text-[13px] font-semibold transition-colors shadow-sm">
+                  {agent.isActive ? (
+                    <button 
+                      onClick={() => setAgentToToggle(agent)}
+                      className="flex-[1.5] sm:flex-none sm:w-28 px-4 py-2.5 sm:py-2 cursor-pointer flex items-center justify-center bg-[#e11d48] hover:bg-[#be123c] text-white rounded-[6px] text-xs sm:text-[13px] font-semibold transition-colors shadow-sm">
                       Deactivate
                     </button>
                   ) : (
-                    <button className="flex-[1.5] sm:flex-none sm:w-28 px-4 py-2.5 sm:py-2 cursor-pointer flex items-center justify-center border border-zinc-200 bg-white hover:bg-zinc-50 text-[#5252ff] rounded-[6px] text-xs sm:text-[13px] font-semibold transition-colors shadow-sm">
+                    <button 
+                      onClick={() => setAgentToToggle(agent)}
+                      className="flex-[1.5] sm:flex-none sm:w-28 px-4 py-2.5 sm:py-2 cursor-pointer flex items-center justify-center border border-zinc-200 bg-white hover:bg-zinc-50 text-[#5252ff] rounded-[6px] text-xs sm:text-[13px] font-semibold transition-colors shadow-sm">
                       Reactivate
                     </button>
                   )}
                 </div>
               </div>
-            ))
+            )})
           )}
         </div>
 
@@ -201,34 +200,43 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
                   </td>
                 </tr>
               ))
+            ) : agents && agents.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-zinc-500 font-medium">
+                  No agents available
+                </td>
+              </tr>
             ) : (
-              mockAgents.map((agent) => (
+            (agents || []).map((agent) => {
+              const initials = agent.name ? agent.name.substring(0, 2).toUpperCase() : "A";
+              const statusText = agent.isActive ? "Active" : "Inactive";
+              return (
                 <tr key={agent.id} className="hover:bg-zinc-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
                       <div className="w-9 h-9 rounded-full bg-[#f0f4ff] text-[#5252ff] flex items-center justify-center font-bold text-sm shrink-0">
-                        {agent.initials}
+                        {initials}
                       </div>
                       <span className="font-semibold text-zinc-900 text-[15px]">{agent.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <span className={`px-4 py-1.5 rounded-full text-xs font-semibold ${
-                      agent.status === "Active" 
+                      agent.isActive 
                         ? "bg-[#e5fcf1] text-[#1f9d55]" 
                         : "bg-zinc-100 text-zinc-500"
                     }`}>
-                      {agent.status}
+                      {statusText}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center text-zinc-500 font-medium">
-                    {agent.goal}
+                    {agent.dailyGoal || 0} /day
                   </td>
                   <td className="px-6 py-4 text-center font-bold text-zinc-900 text-[15px]">
-                    {agent.today}
+                    {agent.salesToday || 0}
                   </td>
                   <td className="px-6 py-4 text-center text-zinc-500 font-medium">
-                    {agent.week}
+                    {agent.salesWeek || 0}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-3">
@@ -238,19 +246,23 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
                       >
                         Edit
                       </button>
-                      {agent.status === "Active" ? (
-                        <button className="px-4 py-3 cursor-pointer flex items-center justify-center bg-[#e11d48] hover:bg-[#be123c] text-white rounded-[6px] text-xs font-semibold transition-colors">
+                      {agent.isActive ? (
+                        <button 
+                          onClick={() => setAgentToToggle(agent)}
+                          className="px-4 py-3 cursor-pointer flex items-center justify-center bg-[#e11d48] hover:bg-[#be123c] text-white rounded-[6px] text-xs font-semibold transition-colors">
                           Deactivate
                         </button>
                       ) : (
-                        <button className="px-4 py-3 cursor-pointer flex items-center justify-center bg-white hover:bg-zinc-50 text-[#5252ff] rounded-[6px] text-xs font-semibold transition-colors">
+                        <button 
+                          onClick={() => setAgentToToggle(agent)}
+                          className="px-4 py-3 cursor-pointer flex items-center justify-center bg-white hover:bg-zinc-50 text-[#5252ff] rounded-[6px] text-xs font-semibold transition-colors">
                           Reactivate
                         </button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))
+              )})
             )}
           </tbody>
         </table>
@@ -259,7 +271,6 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
 
       <EditAgentModal isOpen={!!selectedEditAgent} onClose={() => setSelectedEditAgent(null)} agent={selectedEditAgent} />
 
-      {/* --- ORIGINAL MODALS COMMENTED OUT FOR DEMO ---
       {agentToDelete && (
         <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-[24px] w-full max-w-[400px] shadow-2xl p-8 flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
@@ -336,7 +347,6 @@ export function AgentListTable({ agents, isLoading }: AgentListTableProps) {
           </div>
         </div>
       )}
-      ------------------------------------------------ */}
       
       <AddAgentModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
     </div>

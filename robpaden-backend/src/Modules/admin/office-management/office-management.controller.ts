@@ -70,11 +70,5 @@ export class OfficeManagementController extends BaseController {
     return this.sendResponse(req, res, "Office deleted successfully", 200, null);
   }
 
-  public async getOfficeStats(req: Request, res: Response) {
-    this.logger.info("Received request to fetch office stats");
-    
-    const stats = await this.officeService.getOfficeStats();
-    
-    return this.sendResponse(req, res, "Office stats retrieved successfully", 200, stats);
-  }
+
 }

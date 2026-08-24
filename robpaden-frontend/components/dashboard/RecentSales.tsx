@@ -1,14 +1,10 @@
 interface RecentSalesProps {
   isLoading?: boolean;
+  data?: any[];
 }
 
-export function RecentSales({ isLoading }: RecentSalesProps) {
-  const sales = [
-    { id: 1, name: "Jordan Lee", initials: "JL", time: "2:41 PM", status: "Confirmed" },
-    { id: 2, name: "Sam Patel", initials: "SP", time: "2:38 PM", status: "Confirmed" },
-    { id: 3, name: "Casey Kim", initials: "CK", time: "2:30 PM", status: "Reversed" },
-    { id: 4, name: "Riley Chen", initials: "RC", time: "2:22 PM", status: "Confirmed" },
-  ];
+export function RecentSales({ isLoading, data }: RecentSalesProps) {
+  const sales = data || [];
 
   return (
     <div className="space-y-3">
@@ -28,6 +24,10 @@ export function RecentSales({ isLoading }: RecentSalesProps) {
             </div>
           </div>
         ))
+      ) : sales.length === 0 ? (
+        <div className="p-8 text-center text-zinc-500 bg-white rounded-xl border border-zinc-200 shadow-sm">
+          <p className="text-sm font-medium">Not available</p>
+        </div>
       ) : sales.map((sale) => (
         <div key={sale.id} className="flex flex-wrap items-center justify-between gap-3 p-4 bg-white rounded-xl border border-zinc-200 shadow-sm hover:shadow-md transition-shadow group">
           <div className="flex items-center gap-3">
@@ -41,7 +41,7 @@ export function RecentSales({ isLoading }: RecentSalesProps) {
           </div>
           
           <div className="flex items-center gap-3 justify-between sm:justify-end w-full sm:w-auto mt-1 sm:mt-0 pt-2 sm:pt-0 border-t border-zinc-100 sm:border-0">
-            <span className="text-[13px] font-semibold text-zinc-800 whitespace-nowrap">1 sale</span>
+            <span className="text-[13px] font-semibold text-zinc-800 whitespace-nowrap">{sale.count} {sale.count === 1 ? "sale" : "sales"}</span>
             <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full whitespace-nowrap ${
               sale.status === 'Confirmed' 
                 ? 'bg-[#e5fcf1] text-[#1f9d55]' 

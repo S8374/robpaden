@@ -9,7 +9,7 @@ import { validateRequest } from "@/middleware/validation";
 import { authenticate } from "@/middleware/auth";
 import { inviteAgentSchema } from "./agent-management/ManagerAgentDTO";
 
-import { addDailySalesSchema } from "./performance/ManagerPerformanceDTO";
+import { addDailySalesSchema, editSaleSchema } from "./performance/ManagerPerformanceDTO";
 import { Request, Response, NextFunction } from "express";
 import { AuthorizationError } from "@/core/errors/AppError";
 import { uploadSingleFile } from "@/middleware/fileUpload";
@@ -120,6 +120,31 @@ export class ManagerModule extends BaseModule {
     this.router.get(
       "/performance/agent/:agentId",
       perfController.getAgentPerformance.bind(perfController)
+    );
+
+    // GET /manager/performance/agent/:agentId/audit-today
+    this.router.get(
+      "/performance/agent/:agentId/audit-today",
+      perfController.getAgentTodayAudit.bind(perfController)
+    );
+
+    // POST /manager/performance/audit/:auditId/reverse
+    this.router.post(
+      "/performance/audit/:auditId/reverse",
+      perfController.reverseSale.bind(perfController)
+    );
+
+    // POST /manager/performance/audit/:auditId/edit
+    this.router.post(
+      "/performance/audit/:auditId/edit",
+      validateRequest(editSaleSchema),
+      perfController.editSale.bind(perfController)
+    );
+    
+    // GET /manager/performance/dashboard
+    this.router.get(
+      "/performance/dashboard",
+      perfController.getManagerDashboard.bind(perfController)
     );
   }
 }

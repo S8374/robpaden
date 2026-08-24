@@ -3,7 +3,7 @@ import axios from "axios";
 // Create a configured Axios instance
 export const axiosInstance = axios.create({
   // Use your API URL from environment variables, or a default local URL
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3030",
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

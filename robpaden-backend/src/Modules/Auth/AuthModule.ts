@@ -4,7 +4,7 @@ import { AuthServices } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { validateRequest } from "@/middleware/validation";
 import { authenticate } from "@/middleware/auth";
-import { createUserSchema, loginSchema } from "./AuthDTO";
+import { createUserSchema, loginSchema, forgotPasswordSchema, verifyOtpSchema, resetPasswordSchema } from "./AuthDTO";
 
 export class AuthModule extends BaseModule {
   public name: string = "AuthModule";
@@ -50,6 +50,27 @@ export class AuthModule extends BaseModule {
     this.router.get(
       "/branding/:id",
       controller.getOfficeBranding.bind(controller)
+    );
+
+    // POST /auth/forgot-password
+    this.router.post(
+      "/forgot-password",
+      validateRequest(forgotPasswordSchema),
+      controller.forgotPassword.bind(controller)
+    );
+
+    // POST /auth/verify-otp
+    this.router.post(
+      "/verify-otp",
+      validateRequest(verifyOtpSchema),
+      controller.verifyOtp.bind(controller)
+    );
+
+    // POST /auth/reset-password
+    this.router.post(
+      "/reset-password",
+      validateRequest(resetPasswordSchema),
+      controller.resetPassword.bind(controller)
     );
   }
 }

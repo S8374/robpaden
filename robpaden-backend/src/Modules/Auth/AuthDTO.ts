@@ -20,5 +20,28 @@ export const loginSchema = {
 };
 
 export type CreateUserDTO = z.infer<typeof createUserSchema.body>;
-
 export type LoginDTO = z.infer<typeof loginSchema.body>;
+
+export const forgotPasswordSchema = {
+  body: z.object({
+    email: z.string().email("Invalid email address"),
+  }),
+};
+
+export const verifyOtpSchema = {
+  body: z.object({
+    email: z.string().email("Invalid email address"),
+    otp: z.string().length(6, "OTP must be 6 characters"),
+  }),
+};
+
+export const resetPasswordSchema = {
+  body: z.object({
+    token: z.string().min(1, "Token is required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+  }),
+};
+
+export type ForgotPasswordDTO = z.infer<typeof forgotPasswordSchema.body>;
+export type VerifyOtpDTO = z.infer<typeof verifyOtpSchema.body>;
+export type ResetPasswordDTO = z.infer<typeof resetPasswordSchema.body>;

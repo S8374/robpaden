@@ -33,15 +33,17 @@ export default function AdminLogin() {
       const res = await login({ email, password }).unwrap();
       if (res.success) {
         if (res.data?.token) {
+          console.log("Setting token:", res.data.token.substring(0, 10) + "...");
           sessionStorage.setItem("accessToken", res.data.token);
         }
-        // Successful login, redirect to dashboard
-        router.push("/dashboard");
+        console.log("Redirecting to dashboard...");
+        // Force full page navigation to clear any cached states
+        window.location.href = "/dashboard";
       } else {
         setErrorMsg(res.message || "Login failed");
       }
     } catch (err: any) {
-      setErrorMsg(err?.data?.message || "Something went wrong. Please try again.");
+      setErrorMsg(err?.data?.error?.message || err?.data?.message || "Something went wrong. Please try again.");
     }
   };
 

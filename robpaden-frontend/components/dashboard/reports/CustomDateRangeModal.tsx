@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { X, CalendarDays } from "lucide-react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface CustomDateRangeModalProps {
   isOpen: boolean;
@@ -8,21 +10,23 @@ interface CustomDateRangeModalProps {
 }
 
 export function CustomDateRangeModal({ isOpen, onClose, onApply }: CustomDateRangeModalProps) {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   if (!isOpen) return null;
 
   const handleApply = () => {
     if (startDate && endDate) {
-      onApply(startDate, endDate);
+      // Convert to local YYYY-MM-DD to pass to parent
+      const s = startDate.toLocaleDateString('en-CA'); // 'en-CA' outputs YYYY-MM-DD
+      const e = endDate.toLocaleDateString('en-CA');
+      onApply(s, e);
       onClose();
     }
   };
 
   return (
     <div className="fixed inset-0 bg-zinc-900/40 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-      {/* Removed overflow-hidden to prevent native date picker from clipping */}
       <div className="bg-white rounded-2xl w-full max-w-[420px] shadow-xl animate-in fade-in zoom-in duration-200">
         
         <div className="flex items-center justify-between p-6">
@@ -46,22 +50,37 @@ export function CustomDateRangeModal({ isOpen, onClose, onApply }: CustomDateRan
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-zinc-700 mb-1.5 uppercase tracking-wider">Start Date</label>
-              <input 
-                type="date" 
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all"
-              />
+              <div className="relative">
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date: Date | null) => setStartDate(date)}
+                  selectsStart
+                  startDate={startDate || undefined}
+                  endDate={endDate || undefined}
+                  maxDate={endDate || new Date()}
+                  placeholderText="Select start date"
+                  className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all"
+                  wrapperClassName="w-full"
+                />
+              </div>
             </div>
             
             <div>
               <label className="block text-xs font-semibold text-zinc-700 mb-1.5 uppercase tracking-wider">End Date</label>
-              <input 
-                type="date" 
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all"
-              />
+              <div className="relative">
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date: Date | null) => setEndDate(date)}
+                  selectsEnd
+                  startDate={startDate || undefined}
+                  endDate={endDate || undefined}
+                  minDate={startDate || undefined}
+                  maxDate={new Date()}
+                  placeholderText="Select end date"
+                  className="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all"
+                  wrapperClassName="w-full"
+                />
+              </div>
             </div>
           </div>
 
@@ -73,10 +92,7 @@ export function CustomDateRangeModal({ isOpen, onClose, onApply }: CustomDateRan
               Cancel
             </button>
             <button 
-              onClick={() => {
-                onApply(startDate, endDate);
-                onClose();
-              }}
+              onClick={handleApply}
               disabled={!startDate || !endDate}
               className="flex-[1.5] cursor-pointer px-4 py-3 bg-[#5252ff] hover:bg-[#4242e5] disabled:bg-[#5252ff]/50 disabled:cursor-not-allowed text-white text-[13px] font-bold rounded-xl transition-colors shadow-sm"
             >

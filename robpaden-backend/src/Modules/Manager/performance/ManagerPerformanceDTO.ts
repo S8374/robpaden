@@ -9,3 +9,11 @@ export const addDailySalesSchema = {
 };
 
 export type AddDailySalesDTO = z.infer<typeof addDailySalesSchema.body>;
+
+export const editSaleSchema = {
+  body: z.object({
+    newCount: z.number().int().nonnegative("Sales count cannot be negative"),
+  }),
+};
+
+export type EditSaleDTO = z.infer<typeof editSaleSchema.body>;

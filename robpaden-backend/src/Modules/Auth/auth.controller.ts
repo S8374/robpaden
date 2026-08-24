@@ -84,4 +84,25 @@ export class AuthController extends BaseController {
     const result = await this.authService.getOfficeBranding(id);
     return this.sendResponse(req, res, "Branding retrieved", 200, result);
   }
+
+  public async forgotPassword(req: Request, res: Response) {
+    this.logger.info("Received request for forgot password");
+    const { email } = req.validatedBody as any;
+    await this.authService.forgotPassword(email);
+    return this.sendResponse(req, res, "If that email exists, an OTP has been sent.", 200, null);
+  }
+
+  public async verifyOtp(req: Request, res: Response) {
+    this.logger.info("Received request to verify OTP");
+    const { email, otp } = req.validatedBody as any;
+    const token = await this.authService.verifyOtp(email, otp);
+    return this.sendResponse(req, res, "OTP verified successfully.", 200, { token });
+  }
+
+  public async resetPassword(req: Request, res: Response) {
+    this.logger.info("Received request to reset password");
+    const { token, password } = req.validatedBody as any;
+    await this.authService.resetPassword(token, password);
+    return this.sendResponse(req, res, "Password has been successfully reset.", 200, null);
+  }
 }

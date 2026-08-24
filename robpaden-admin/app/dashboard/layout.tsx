@@ -1,5 +1,6 @@
 import { Bell, Search } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
+import { AuthGuard } from "@/components/AuthGuard";
 
 export default function DashboardLayout({
   children,
@@ -7,6 +8,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <AuthGuard>
     <div className="flex h-screen bg-zinc-50 text-zinc-900 font-sans overflow-hidden selection:bg-primary/20">
       
       {/* Sidebar */}
@@ -34,5 +36,6 @@ export default function DashboardLayout({
         </div>
       </main>
     </div>
+    </AuthGuard>
   );
 }

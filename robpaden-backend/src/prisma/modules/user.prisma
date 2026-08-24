@@ -1,11 +1,11 @@
 model User {
-  id          Int     @id @default(autoincrement())
-  email       String  @unique
-  password    String?
-  name        String
-  avatarUrl   String?
-  isActive    Boolean @default(true)
-  role        Role    @default(AGENT)
+  id        Int     @id @default(autoincrement())
+  email     String  @unique
+  password  String?
+  name      String
+  avatarUrl String?
+  isActive  Boolean @default(true)
+  role      Role    @default(AGENT)
 
   // Goals for Agents
   dailyGoal   Int?
@@ -16,12 +16,10 @@ model User {
   permissions Permission[]
 
   // Limits
-  agentLimit  Int?
+  agentLimit Int?
 
   companyId Int?
-  company   Company? @relation(fields: [companyId], references: [id])
-
-
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   // Manager self-relation: An Agent belongs to a Manager
   managerId Int?
@@ -41,6 +39,15 @@ model User {
   // Audits
   auditsAsAgent   SalesAuditLog[] @relation("AgentAudit")
   auditsAsManager SalesAuditLog[] @relation("ManagerAudit")
+
+  agentActivitiesTarget AgentActivityLog[] @relation("AgentActivityTarget")
+  managerActivities     AgentActivityLog[] @relation("ManagerActivityPerformer")
+
+  reportHistory    ReportHistory[]   @relation("ManagerReportHistory")
+  reportRecipients ReportRecipient[] @relation("ManagerReportRecipients")
+
+  resetPasswordOtp       String?
+  resetPasswordOtpExpiry DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

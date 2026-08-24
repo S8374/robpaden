@@ -10,7 +10,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const token = sessionStorage.getItem("accessToken");
     if (!token) {
-      router.replace("/");
+      // Use window.location.href to guarantee redirect, as Next.js router can sometimes hang on initial load in layout
+      window.location.href = "/";
     } else {
       setIsAuthenticated(true);
     }

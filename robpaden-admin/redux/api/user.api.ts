@@ -50,7 +50,7 @@ const userApi = baseApi.injectEndpoints({
         method: "POST",
         data: payload,
       }),
-      invalidatesTags: ["Users", "UserStats"],
+      invalidatesTags: ["Users", "UserStats", "Offices"],
     }),
 
     updateUser: builder.mutation<ApiResponse<any>, { id: number; data: any }>({
@@ -59,7 +59,7 @@ const userApi = baseApi.injectEndpoints({
         method: "PUT",
         data,
       }),
-      invalidatesTags: ["Users"],
+      invalidatesTags: ["Users", "Offices"],
     }),
 
     deleteUser: builder.mutation<ApiResponse<any>, number>({
@@ -67,7 +67,7 @@ const userApi = baseApi.injectEndpoints({
         url: `/admin/v1/users/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Users", "UserStats"],
+      invalidatesTags: ["Users", "UserStats", "Offices"],
     }),
 
     toggleUserStatus: builder.mutation<ApiResponse<any>, { id: number; isActive: boolean }>({
@@ -78,12 +78,28 @@ const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Users"],
     }),
+    getManagerActivityTimeline: builder.query<ApiResponse<any[]>, number>({
+      query: (id) => ({
+        url: `/admin/v1/users/${id}/activity`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "Users", id }, "AgentAudit"],
+    }),
+    getAgentActivityTimeline: builder.query<ApiResponse<any[]>, number>({
+      query: (id) => ({
+        url: `/admin/v1/users/${id}/agent-activity`,
+        method: "GET",
+      }),
+      providesTags: (result, error, id) => [{ type: "Users", id }, "AgentAudit"],
+    }),
   }),
 });
 
 export const {
   useGetUsersQuery,
   useGetUserDetailsQuery,
+  useGetManagerActivityTimelineQuery,
+  useGetAgentActivityTimelineQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,

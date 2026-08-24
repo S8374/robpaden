@@ -45,6 +45,18 @@ export class UserManagementModule extends BaseModule {
       controller.getUserDetails.bind(controller)
     );
 
+    // GET /admin/v1/users/:id/activity
+    this.router.get(
+      "/:id/activity",
+      controller.getManagerActivityTimeline.bind(controller)
+    );
+
+    // GET /admin/v1/users/:id/agent-activity
+    this.router.get(
+      "/:id/agent-activity",
+      controller.getAgentActivityTimeline.bind(controller)
+    );
+
     // PUT /admin/v1/users/:id
     this.router.put(
       "/:id",
