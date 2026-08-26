@@ -45,6 +45,10 @@ axiosInstance.interceptors.response.use(
   },
   (error) => {
     // e.g., handle 401 Unauthorized globally
+    if (error.response?.status === 401 && typeof window !== "undefined") {
+      sessionStorage.removeItem("accessToken");
+      window.location.href = "/";
+    }
     return Promise.reject(error);
   }
 );

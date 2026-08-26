@@ -1,6 +1,7 @@
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Sidebar } from "@/components/Sidebar";
 import { AuthGuard } from "@/components/AuthGuard";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function DashboardLayout({
   children,
@@ -24,9 +25,7 @@ export default function DashboardLayout({
           </div>
           
           <div className="flex items-center">
-            <button className="relative p-2 text-zinc-400 hover:text-zinc-600 border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors">
-              <Bell className="w-4 h-4" />
-            </button>
+            <NotificationBell />
           </div>
         </header>
 

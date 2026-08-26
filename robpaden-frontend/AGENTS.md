@@ -23,3 +23,7 @@ First Reade it than start worked .
 --> Dynamically configured the frontend to use NEXT_PUBLIC_API_URL for API fetching.
 --> Enhanced the sizing and aesthetics of the dynamically loaded Office Logo in the frontend login page.
 --> Removed Team Management UI: deleted app/dashboard/teams, components/dashboard/teams, and redux/api/team.api.ts. Removed Team Goals widget from the TV Board page.
+--> Fixed `z-index` layering issues in `AgentsTable` so that the Date Picker appears correctly beneath the agent Correction Sidebar.
+--> Implemented "Remember Me" functionality in the manager frontend login page (`localStorage` saving/loading).
+--> Built a complete 3-step "Forgot Password" flow (`app/forgot-password/page.tsx`).
+--> Connected the new forgot password API endpoints to the frontend using RTK Query in `auth.api.ts`.

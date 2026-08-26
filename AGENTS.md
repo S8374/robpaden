@@ -68,3 +68,10 @@ ame optional in UserManagementDTO and assigned a dynamic email prefix fallback f
 --> Implemented Agent Sales Correction functionality, allowing managers to reverse or edit specific sales transactions directly from the dashboard sidebar.
 --> Created new backend endpoints (`/audit-today`, `/reverse`, `/edit`) and dynamically linked them to the frontend using Redux RTK Query.
 --> Migrated the entire Sales architecture to use the actual `Sale` table instead of the `SalesAuditLog`, ensuring that adding, reversing, and editing sales properly updates individual `Sale` records and correctly increments/decrements `PerformanceRecord` totals.
+--> Fixed `z-index` layering issues in `AgentsTable` so that the Date Picker appears correctly beneath the agent Correction Sidebar.
+--> Implemented "Remember Me" functionality in the manager frontend login page (`localStorage` saving/loading).
+--> Built a complete 3-step "Forgot Password" flow (`app/forgot-password/page.tsx`) in the frontend.
+--> Updated the `User` schema in `robpaden-backend` to include `resetPasswordOtp` and `resetPasswordOtpExpiry`.
+--> Created three new backend endpoints (`/auth/forgot-password`, `/auth/verify-otp`, `/auth/reset-password`) in the Auth module.
+--> Updated `EmailService` to include `sendPasswordResetOtp` to securely deliver a 6-digit verification code.
+--> Connected the new forgot password API endpoints to the frontend using RTK Query in `auth.api.ts`.

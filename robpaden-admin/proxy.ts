@@ -2,21 +2,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export default function proxy(request: NextRequest) {
-  // Check if the auth token cookie exists
-  const token = request.cookies.get('token')?.value;
-  const { pathname } = request.nextUrl;
-
-  // 1. If the user is logged in and tries to access the login page (/),
-  // redirect them to the dashboard.
-  if (token && pathname === '/') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // 2. If the user is NOT logged in and tries to access protected routes,
-  // redirect them to the login page (/).
-  if (!token && pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/', request.url));
-  }
+  // Removed server-side route protection to allow strictly tab-wise isolated 
+  // sessions on the client side via sessionStorage in AuthGuard.
 
   return NextResponse.next();
 }

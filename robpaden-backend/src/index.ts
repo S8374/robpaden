@@ -14,6 +14,7 @@ import { UserManagementModule } from "./Modules/admin/user-management/UserManage
 import { ManagerModule } from "./Modules/Manager/ManagerModule";
 import { ReportModule } from "./Modules/Manager/report/ReportModule";
 import { TVModule } from "./Modules/TV/TVModule";
+import { NotificationModule } from "./Modules/notifications/NotificationModule";
 
 // Modules (Business Logic)
 
@@ -42,6 +43,7 @@ async function bootstrap() {
     app.registerModule(new DashboardModule());
     app.registerModule(userManagementModule);
     app.registerModule(managerModule);
+    app.registerModule(new NotificationModule());
     
     const prismaService = app.getContext().getService("prisma");
     app.registerModule(new ReportModule());

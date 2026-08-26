@@ -81,7 +81,9 @@ export class ManagerAgentService {
       data: {
         action: "Agent Added",
         entityName: `${data.name} (${manager?.name || 'Unknown'})`,
-        iconType: "UsersRound"
+        iconType: "UsersRound",
+        creatorRole: "MANAGER",
+        link: "/dashboard/user-management"
       }
     });
 

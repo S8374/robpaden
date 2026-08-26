@@ -76,3 +76,6 @@ First Reade it than start worked .
     - `PATCH /admin/v1/teams/:id/members/:memberId` (Allows Super Admins to update individual targets and roles)
     - `DELETE /admin/v1/teams/:id/members/:memberId` (Removes a member from a team)
 --> Removed Team Management architecture: dropped Team tables and relations from Prisma schema, deleted AdminTeamModule and ManagerTeamModule, and cleaned up cascading and leaderboard logic in manager-performance and tv services.
+--> Updated the `User` schema in Prisma to include `resetPasswordOtp` and `resetPasswordOtpExpiry`.
+--> Created three new backend endpoints (`/auth/forgot-password`, `/auth/verify-otp`, `/auth/reset-password`) in the Auth module for the forgot password flow.
+--> Updated `EmailService` to include `sendPasswordResetOtp` to securely deliver a 6-digit verification code.

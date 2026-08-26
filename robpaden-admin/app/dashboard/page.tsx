@@ -243,7 +243,7 @@ export default function DashboardPage() {
           {/* Recent Activity */}
           <div>
             <h2 className="text-lg font-bold text-zinc-800 mb-4">System Activity</h2>
-            <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden p-5 space-y-4">
+            <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-y-auto p-5 space-y-4 max-h-[450px]">
                {stats.activities && stats.activities.length > 0 ? (
                  stats.activities.map((activity: any) => {
                    let Icon = Building2;

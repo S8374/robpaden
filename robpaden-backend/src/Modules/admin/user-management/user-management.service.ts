@@ -72,8 +72,8 @@ export class UserManagementService {
       }
     });
 
-    // Send welcome email with the raw password
-    const emailSent = await this.emailService.sendWelcomeEmail(
+    // Send welcome email in background without blocking
+    this.emailService.sendWelcomeEmail(
       data.email, 
       userName,
       data.role, 
@@ -81,7 +81,11 @@ export class UserManagementService {
       data.companyId,
       companyName,
       companyLogoUrl
-    );
+    ).then(sent => {
+      if (!sent) this.logger.error(`Failed to send welcome email to ${data.email}`);
+    }).catch(e => {
+      this.logger.error(`Error sending welcome email in background`, e);
+    });
 
     return {
       user: {
@@ -92,7 +96,7 @@ export class UserManagementService {
         companyId: user.companyId,
         managerId: user.managerId
       },
-      emailSent
+      emailSent: true // optimistic
     };
   }
 

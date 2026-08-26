@@ -18,24 +18,15 @@ export class AdminLoginController extends BaseController {
 
     const result = await this.adminLoginService.loginAdmin(email, password);
 
-    // Set HttpOnly Cookie for route protection in Next.js middleware
-    res.cookie('token', result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 1 day
-    });
+    // Removed global HTTP-Only Cookie to allow strictly tab-wise isolated sessions
 
     return this.sendResponse(req, res, "Admin logged in successfully", 200, result);
   }
 
   public async logoutAdmin(req: Request, res: Response) {
     this.logger.info("Received admin logout request");
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    });
+    // No cookie to clear since we use tab-wise sessionStorage
+    this.logger.info("Admin logout successful");
     return this.sendResponse(req, res, "Admin logged out successfully", 200, {});
   }
 }

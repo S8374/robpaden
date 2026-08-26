@@ -34,8 +34,9 @@ export class DashboardService {
     // For now, assume every company has an active TV board
     const activeTVBoards = totalOffices;
 
-    // Fetch recent 10 activities
+    // Fetch recent 10 activities that were performed by Managers
     const activities = await this.prisma.systemActivity.findMany({
+      where: { creatorRole: 'MANAGER' },
       take: 10,
       orderBy: { createdAt: 'desc' }
     });
