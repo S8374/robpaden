@@ -247,4 +247,55 @@ export class EmailService {
       return false;
     }
   }
+
+  public async sendManagerNewAgentNotification(
+    managerEmail: string,
+    managerName: string,
+    agentName: string,
+    agentEmail: string
+  ): Promise<boolean> {
+    try {
+      const senderName = process.env.MAIL_FROM_NAME || "Robpaden System";
+      const senderEmail = process.env.MAIL_FROM || process.env.MAIL_USER;
+      const frontendLink = process.env.FRONTEND_LINK || "http://localhost:3000";
+      const loginUrl = `${frontendLink}/dashboard`;
+
+      const mailOptions = {
+        from: `"${senderName}" <${senderEmail}>`,
+        to: managerEmail,
+        subject: `New Agent Assigned to Your Team`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #eaeaea; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); background-color: #ffffff;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <div style="background-color: #5252ff; color: white; display: inline-block; width: 60px; height: 60px; border-radius: 30px; line-height: 60px; font-size: 28px; font-weight: bold;">R</div>
+            </div>
+            <h2 style="text-align: center; color: #333;">New Agent Assigned</h2>
+            <p style="color: #555; text-align: center; font-size: 16px;">Hi ${managerName},</p>
+            <p style="color: #555; text-align: center; font-size: 16px;">An administrator has just assigned a new agent to your team.</p>
+            
+            <div style="background-color: #f5f5ff; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #e0e0ff;">
+              <p style="margin: 0 0 10px 0; color: #333;"><strong>Agent Name:</strong> ${agentName}</p>
+              <p style="margin: 0; color: #333;"><strong>Agent Email:</strong> ${agentEmail}</p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}" style="background-color: #5252ff; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px; display: inline-block;">
+                Log In to Dashboard
+              </a>
+            </div>
+            
+            <hr style="border: 1px solid #eee; margin-top: 40px; margin-bottom: 20px;" />
+            <p style="font-size: 12px; color: #aaa; text-align: center;">This is an automated notification. Do not reply to this email.</p>
+          </div>
+        `,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      this.logger.info(`New agent notification sent to manager ${managerEmail}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Failed to send new agent notification to ${managerEmail}`, error);
+      return false;
+    }
+  }
 }

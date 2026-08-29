@@ -25,6 +25,7 @@ export const updateOfficeSettingsSchema = {
     celebrationStyle: z.string().optional(),
     tvTheme: z.string().optional(),
     logoUrl: z.any().optional(),
+    celebrationSoundUrl: z.any().optional(),
     reportRecipients: z.preprocess((val) => {
       if (typeof val === "string") return val.split(",");
       return val;

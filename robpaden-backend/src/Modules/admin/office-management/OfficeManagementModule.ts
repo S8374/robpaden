@@ -4,7 +4,7 @@ import { OfficeManagementService } from "./office-management.service";
 import { OfficeManagementController } from "./office-management.controller";
 import { validateRequest } from "@/middleware/validation";
 import { createOfficeSchema, updateOfficeSettingsSchema } from "./OfficeManagementDTO";
-import { uploadSingleFile } from "@/middleware/fileUpload";
+import { uploadSingleFile, uploadMultipleFields } from "@/middleware/fileUpload";
 
 export class OfficeManagementModule extends BaseModule {
   public name: string = "OfficeManagementModule";
@@ -30,7 +30,10 @@ export class OfficeManagementModule extends BaseModule {
     // POST /admin/v1/offices
     this.router.post(
       "/",
-      uploadSingleFile("logoUrl"),
+      uploadMultipleFields([
+        { name: "logoUrl", maxCount: 1 },
+        { name: "celebrationSoundUrl", maxCount: 1 }
+      ]),
       validateRequest(createOfficeSchema),
       controller.createOffice.bind(controller)
     );
@@ -46,7 +49,10 @@ export class OfficeManagementModule extends BaseModule {
     // PATCH /admin/v1/offices/:id
     this.router.patch(
       "/:id",
-      uploadSingleFile("logoUrl"),
+      uploadMultipleFields([
+        { name: "logoUrl", maxCount: 1 },
+        { name: "celebrationSoundUrl", maxCount: 1 }
+      ]),
       validateRequest(updateOfficeSettingsSchema),
       controller.updateOfficeSettings.bind(controller)
     );

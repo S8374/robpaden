@@ -56,23 +56,21 @@ export class DashboardService {
           salesCount: 'desc'
         }
       },
-      take: 1
+      take: 3
     });
 
-    let topOffice = null;
-    if (companyPerformances.length > 0) {
-      const bestCompanyId = companyPerformances[0].companyId;
-      const bestCompanySales = companyPerformances[0]._sum.salesCount || 0;
+    const topOffices = [];
+    for (const perf of companyPerformances) {
       const companyInfo = await this.prisma.company.findUnique({
-        where: { id: bestCompanyId },
+        where: { id: perf.companyId },
         include: { settings: true }
       });
       if (companyInfo) {
-        topOffice = {
+        topOffices.push({
           name: companyInfo.name,
-          sales: bestCompanySales,
+          sales: perf._sum.salesCount || 0,
           goal: companyInfo.settings?.monthlyGoal || 0
-        };
+        });
       }
     }
 
@@ -115,7 +113,7 @@ export class DashboardService {
       newAgentsThisMonth,
       activeTVBoards,
       activities,
-      topOffice,
+      topOffices,
       topManagers
     };
   }

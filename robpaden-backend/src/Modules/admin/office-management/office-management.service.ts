@@ -8,7 +8,7 @@ export class OfficeManagementService {
 
   constructor(private readonly prisma: PrismaClient) {}
 
-  public async createOffice(payload: { name: string; logoUrl?: string; timeZone?: string; officeStartTime?: string; officeCloseTime?: string; monthlyGoal?: number }) {
+  public async createOffice(payload: { name: string; logoUrl?: string; timeZone?: string; officeStartTime?: string; officeCloseTime?: string; monthlyGoal?: number; celebrationSoundUrl?: string; }) {
     this.logger.info("Creating new company (office)", { name: payload.name });
 
     const existing = await this.prisma.company.findUnique({
@@ -29,6 +29,7 @@ export class OfficeManagementService {
             officeStartTime: payload.officeStartTime || "09:00",
             officeCloseTime: payload.officeCloseTime || "17:00",
             logoUrl: payload.logoUrl || null,
+            celebrationSoundUrl: payload.celebrationSoundUrl || null,
             monthlyGoal: payload.monthlyGoal
           }
         }

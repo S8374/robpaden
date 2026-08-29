@@ -2,22 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
-import { AgentsTable } from "@/components/dashboard/AgentsTable";
-import { RecentSales } from "@/components/dashboard/RecentSales";
-import { RankingList } from "@/components/dashboard/RankingList";
-import { SalesCard } from "@/components/dashboard/SalesCard";
-import { GoalCard } from "@/components/dashboard/GoalCard";
+import { AgentsTable } from "@/components/dashboard/tables/AgentsTable";
+import { RecentSales } from "@/components/dashboard/ui/RecentSales";
+import { RankingList } from "@/components/dashboard/ui/RankingList";
+import { SalesCard } from "@/components/dashboard/ui/SalesCard";
+import { GoalCard } from "@/components/dashboard/ui/GoalCard";
 
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 import { format } from "date-fns";
 import { CalendarDays } from "lucide-react";
-import { Header } from "@/components/dashboard/Header";
+import { Header } from "@/components/dashboard/layout/Header";
 
 import { useGetManagerDashboardQuery } from "@/redux/api/agent.api";
 
 export default function DashboardPage() {
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const selectedDateStr = useSelector((state: RootState) => state.date.selectedDate);
+  const selectedDate = new Date(selectedDateStr);
   
   const queryDate = selectedDate ? format(selectedDate, "yyyy-MM-dd") : undefined;
   
@@ -46,24 +47,7 @@ export default function DashboardPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <Header 
-        title="Dashboard" 
-        action={
-          <div className="relative flex items-center bg-white border border-zinc-200 rounded-lg group hover:border-[#5252ff]/50 transition-colors z-[100]">
-            <div className="pl-3 pr-2 text-zinc-400 group-hover:text-[#5252ff] transition-colors">
-              <CalendarDays className="w-4 h-4" />
-            </div>
-            <DatePicker
-              selected={selectedDate}
-              onChange={(date: Date | null) => setSelectedDate(date)}
-              maxDate={new Date()}
-              dateFormat="MMM d, yyyy"
-              className="w-32 py-2 text-sm text-zinc-700 focus:outline-none cursor-pointer bg-transparent"
-              popperClassName="z-[100]"
-            />
-          </div>
-        }
-      />
+      <Header title="Dashboard" />
 
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto lg:overflow-hidden p-4 md:p-8">

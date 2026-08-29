@@ -30,10 +30,6 @@ export function ReportHistoryTable({ isLoading, isExporting, onExportClick, onRe
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
         <h3 className="text-[15px] font-bold text-zinc-900 tracking-tight">Report History</h3>
         <div className="flex items-center gap-4">
-          <input 
-            type="date" 
-            className="w-[160px] px-3 py-1.5 cursor-pointer text-[13px] bg-white border border-zinc-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5252ff]/20 focus:border-[#5252ff] transition-all text-zinc-600"
-          />
           <button 
             onClick={onExportClick}
             disabled={isExporting}

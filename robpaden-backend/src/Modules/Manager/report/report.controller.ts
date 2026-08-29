@@ -74,7 +74,8 @@ export class ReportController {
   public async getReportHistory(req: Request, res: Response) {
     try {
       const managerId = req.user!.userId;
-      const history = await this.reportService.getReportHistory(managerId);
+      const { range, customStart, customEnd } = req.query;
+      const history = await this.reportService.getReportHistory(managerId, range as string, customStart as string, customEnd as string);
       res.json({ success: true, data: history });
     } catch (error: any) {
       res.status(400).json({ success: false, message: error.message });

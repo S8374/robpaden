@@ -12,3 +12,7 @@ export const uploadMiddleware = multer({
 export const uploadSingleFile = (fieldName: string) => {
   return uploadMiddleware.single(fieldName);
 };
+
+export const uploadMultipleFields = (fields: multer.Field[]) => {
+  return uploadMiddleware.fields(fields);
+};

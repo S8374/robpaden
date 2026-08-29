@@ -1,6 +1,6 @@
 import { Sidebar } from "@/components/Sidebar";
 import { AuthGuard } from "@/components/AuthGuard";
-import { SidebarProvider } from "@/components/dashboard/SidebarContext";
+import { SidebarProvider } from "@/components/dashboard/layout/SidebarContext";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

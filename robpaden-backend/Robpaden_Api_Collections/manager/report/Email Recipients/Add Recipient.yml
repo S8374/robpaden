@@ -1,0 +1,21 @@
+info:
+  name: Add Recipient
+  type: http
+  seq: 5
+
+http:
+  method: POST
+  url: "{{baseUrl}}/manager/reports/recipients"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "owner@example.com"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

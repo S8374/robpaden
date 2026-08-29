@@ -55,10 +55,11 @@ export const reportApi = baseApi.injectEndpoints({
       invalidatesTags: ["Recipients"]
     }),
 
-    getReportHistory: builder.query<any, void>({
-      query: () => ({
+    getReportHistory: builder.query<any, { range?: string; customStart?: string; customEnd?: string } | void>({
+      query: (params) => ({
         url: "/manager/reports/history",
-        method: "GET"
+        method: "GET",
+        params: params || undefined
       }),
       providesTags: ["ReportHistory"]
     }),

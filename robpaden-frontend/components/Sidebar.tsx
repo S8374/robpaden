@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, BarChart3, Settings, LogOut, ChevronDown, Network, X } from "lucide-react";
 import { useState } from "react";
 import { useGetMeQuery } from "@/redux/api/auth.api";
-import { useSidebar } from "@/components/dashboard/SidebarContext";
+import { useSidebar } from "@/components/dashboard/layout/SidebarContext";
 
 export function Sidebar() {
   const pathname = usePathname();

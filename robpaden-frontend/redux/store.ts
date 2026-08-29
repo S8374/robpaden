@@ -2,9 +2,12 @@ import { configureStore } from "@reduxjs/toolkit";
 import { baseApi } from "./baseApi";
 import { setupListeners } from "@reduxjs/toolkit/query";
 
+import dateReducer from "./features/dateSlice";
+
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
+    date: dateReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(baseApi.middleware),

@@ -49,7 +49,7 @@ const agentApi = baseApi.injectEndpoints({
         method: "POST",
         data,
       }),
-      invalidatesTags: ["Agent", "Dashboard", "AgentAudit"], // Refresh agents list, dashboard, and agent audit list
+      invalidatesTags: ["Agent", "Dashboard", "AgentAudit", "Reports"],
     }),
     getAgentTodayAudit: builder.query({
       query: ({ agentId, date }) => ({
@@ -64,7 +64,7 @@ const agentApi = baseApi.injectEndpoints({
         url: `/manager/performance/audit/${auditId}/reverse`,
         method: "POST",
       }),
-      invalidatesTags: (result, error, auditId) => ["Agent", "AgentAudit", "Dashboard"],
+      invalidatesTags: (result, error, auditId) => ["Agent", "AgentAudit", "Dashboard", "Reports"],
     }),
     editSale: builder.mutation({
       query: ({ auditId, newCount }) => ({
@@ -72,7 +72,7 @@ const agentApi = baseApi.injectEndpoints({
         method: "POST",
         data: { newCount },
       }),
-      invalidatesTags: (result, error, { auditId }) => ["Agent", "AgentAudit", "Dashboard"],
+      invalidatesTags: (result, error, { auditId }) => ["Agent", "AgentAudit", "Dashboard", "Reports"],
     }),
     getManagerDashboard: builder.query({
       query: (params?: { date?: string }) => ({

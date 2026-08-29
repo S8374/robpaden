@@ -30,6 +30,7 @@ model CompanySettings {
   monthlyGoal      Int      @default(2000)
   celebrationSound Boolean  @default(true)
   celebrationStyle String   @default("default")
+  celebrationSoundUrl String?
   tvTheme          String   @default("dark")
   reportRecipients String[]
   isReportGenerationActive Boolean @default(true)

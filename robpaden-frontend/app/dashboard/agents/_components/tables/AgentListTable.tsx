@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { AddAgentModal } from "./AddAgentModal";
-import { EditAgentModal } from "./EditAgentModal";
+import { AddAgentModal } from "../modals/AddAgentModal";
+import { EditAgentModal } from "../modals/EditAgentModal";
 import { useUpdateAgentMutation, useDeleteAgentMutation } from "@/redux/api/agent.api";
 import { MoreVertical, Trash2, Ban, UserCheck } from "lucide-react";
 

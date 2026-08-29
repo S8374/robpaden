@@ -19,13 +19,24 @@ export class OfficeManagementController extends BaseController {
     const { name, timeZone, officeStartTime, officeCloseTime, monthlyGoal } = req.validatedBody as CreateOfficeDTO;
     
     let logoUrl: string | undefined;
-    if (req.file) {
-      logoUrl = await uploadFileToRustFS(req.file.buffer, req.file.originalname, req.file.mimetype);
+    let celebrationSoundUrl: string | undefined;
+
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      if (files['logoUrl'] && files['logoUrl'][0]) {
+        const file = files['logoUrl'][0];
+        logoUrl = await uploadFileToRustFS(file.buffer, file.originalname, file.mimetype);
+      }
+      if (files['celebrationSoundUrl'] && files['celebrationSoundUrl'][0]) {
+        const file = files['celebrationSoundUrl'][0];
+        celebrationSoundUrl = await uploadFileToRustFS(file.buffer, file.originalname, file.mimetype);
+      }
     }
     
     const result = await this.officeService.createOffice({
       name,
       logoUrl,
+      celebrationSoundUrl,
       timeZone,
       officeStartTime,
       officeCloseTime,
@@ -49,10 +60,23 @@ export class OfficeManagementController extends BaseController {
     const { id } = req.validatedParams as UpdateOfficeSettingsParamsDTO;
     const body = req.validatedBody as UpdateOfficeSettingsBodyDTO;
     
-    if (req.file) {
-      body.logoUrl = await uploadFileToRustFS(req.file.buffer, req.file.originalname, req.file.mimetype);
-    } else if (typeof body.logoUrl !== 'string') {
+    if (req.files) {
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      if (files['logoUrl'] && files['logoUrl'][0]) {
+        const file = files['logoUrl'][0];
+        body.logoUrl = await uploadFileToRustFS(file.buffer, file.originalname, file.mimetype);
+      }
+      if (files['celebrationSoundUrl'] && files['celebrationSoundUrl'][0]) {
+        const file = files['celebrationSoundUrl'][0];
+        body.celebrationSoundUrl = await uploadFileToRustFS(file.buffer, file.originalname, file.mimetype);
+      }
+    }
+    
+    if (typeof body.logoUrl !== 'string') {
       delete body.logoUrl;
+    }
+    if (typeof body.celebrationSoundUrl !== 'string') {
+      delete body.celebrationSoundUrl;
     }
     
     const result = await this.officeService.updateOfficeSettings(id, body);

@@ -1,247 +1,16 @@
 "use client";
 
-import { use, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, User as UserIcon, Shield, Briefcase, Calendar, CheckCircle2, XCircle, Users, Activity, BarChart, Target, Mail, Building } from "lucide-react";
-import { useGetUserDetailsQuery, useGetManagerActivityTimelineQuery, useDeleteUserMutation, useToggleUserStatusMutation, useGetAgentActivityTimelineQuery } from "@/redux/api/user.api";
-import { useRouter } from "next/navigation";
-
-function ManagerActivityTimeline({ managerId }: { managerId: number }) {
-  const { data, isLoading } = useGetManagerActivityTimelineQuery(managerId);
-  const router = useRouter();
-
-  if (isLoading) {
-    return <div className="p-8 text-center text-zinc-500">Loading timeline...</div>;
-  }
-
-  const timeline = data?.data || [];
-
-  if (timeline.length === 0) {
-    return <div className="p-8 text-center text-zinc-500">No activity history found.</div>;
-  }
-
-  // Group by Date string, then by Agent ID
-  const grouped = timeline.reduce((acc: any, item: any) => {
-    const d = new Date(item.date);
-    const dateStr = d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
-    if (!acc[dateStr]) acc[dateStr] = {};
-    if (!acc[dateStr][item.agentId]) {
-      acc[dateStr][item.agentId] = {
-        agentName: item.agentName,
-        agentId: item.agentId,
-        actions: []
-      };
-    }
-    acc[dateStr][item.agentId].actions.push(item);
-    return acc;
-  }, {});
-
-  return (
-    <div className="p-5 space-y-8 max-h-[600px] overflow-y-auto">
-      {Object.entries(grouped).map(([dateStr, agents]: [string, any], dateIdx) => (
-        <div key={dateStr} className="space-y-4">
-          <div className="sticky top-0 bg-white z-20 pb-2 border-b border-zinc-100 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-zinc-400" />
-            <h4 className="font-bold text-zinc-800 text-sm">{dateStr}</h4>
-          </div>
-          
-          <div className="space-y-3 pl-2">
-            {Object.values(agents).map((agentGroup: any) => (
-              <details key={agentGroup.agentId} className="group bg-zinc-50 border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
-                <summary className="flex items-center justify-between p-4 cursor-pointer list-none hover:bg-zinc-100 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold uppercase text-xs">
-                      {agentGroup.agentName.substring(0, 2)}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-zinc-900">{agentGroup.agentName}</p>
-                      <p className="text-xs text-zinc-500">{agentGroup.actions.length} action{agentGroup.actions.length !== 1 ? 's' : ''} recorded</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault(); // prevent expanding the details tag
-                        router.push(`/dashboard/user-management/${agentGroup.agentId}`);
-                      }}
-                      className="text-xs px-3 py-1.5 bg-white border border-zinc-200 shadow-sm rounded-lg text-indigo-600 font-semibold hover:bg-indigo-50 hover:border-indigo-200 transition-colors"
-                    >
-                      See Details
-                    </button>
-                    <div className="text-zinc-400 group-open:rotate-180 transition-transform duration-200">
-                      ▼
-                    </div>
-                  </div>
-                </summary>
-                
-                <div className="p-4 border-t border-zinc-200 bg-white space-y-4">
-                  {agentGroup.actions.map((item: any, idx: number) => (
-                    <div key={idx} className="flex gap-4 relative">
-                      {idx !== agentGroup.actions.length - 1 && (
-                        <div className="absolute left-3.5 top-7 bottom-[-20px] w-[2px] bg-zinc-100"></div>
-                      )}
-                      
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10 text-[10px] ${
-                        item.type === 'SALE' ? (item.action === 'REVERSED' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600') : 
-                        (item.action === 'AGENT_DEACTIVATED' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600')
-                      }`}>
-                        {item.type === 'SALE' ? <BarChart className="w-3.5 h-3.5" /> : <UserIcon className="w-3.5 h-3.5" />}
-                      </div>
-                      
-                      <div className="flex-1 pb-1">
-                        <div className="flex justify-between items-start">
-                          <p className="text-sm font-semibold text-zinc-900">
-                            {item.type === 'SALE' ? (
-                              item.action === 'ADDED' ? 'Added sales' : 
-                              item.action === 'EDITED' ? 'Edited sales' : 'Reversed sales'
-                            ) : (
-                              item.action === 'AGENT_ADDED' ? 'Added agent' :
-                              item.action === 'AGENT_UPDATED' ? 'Updated profile' :
-                              item.action === 'AGENT_DEACTIVATED' ? 'Deactivated agent' : 'Activated agent'
-                            )}
-                          </p>
-                          <span className="text-xs text-zinc-400 font-medium">{new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </div>
-                        
-                        {item.type === 'SALE' && item.details && (
-                          <div className="mt-1.5 p-2.5 bg-zinc-50 rounded-lg text-xs text-zinc-600 border border-zinc-100 inline-block">
-                            {item.action === 'ADDED' ? <span className="font-medium text-emerald-600">Count: +{item.details.newAmount}</span> : 
-                             item.action === 'EDITED' ? <span>Changed from <span className="font-medium line-through text-zinc-400">{item.details.previousAmount}</span> to <span className="font-medium text-blue-600">{item.details.newAmount}</span></span> :
-                             <span className="font-medium text-red-600">Reversed count: -{item.details.previousAmount}</span>}
-                          </div>
-                        )}
-                        
-                        {item.type === 'AGENT' && item.details?.note && (
-                          <div className="mt-1.5 p-2.5 bg-zinc-50 rounded-lg text-xs text-zinc-600 border border-zinc-100">
-                            {item.details.note}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function AgentActivityTimeline({ agentId }: { agentId: number }) {
-  const { data, isLoading } = useGetAgentActivityTimelineQuery(agentId);
-
-  if (isLoading) {
-    return <div className="p-8 text-center text-zinc-500">Loading timeline...</div>;
-  }
-
-  const timeline = data?.data || [];
-
-  if (timeline.length === 0) {
-    return <div className="p-8 text-center text-zinc-500">No activity history found.</div>;
-  }
-
-  const grouped = timeline.reduce((acc: any, item: any) => {
-    const d = new Date(item.date);
-    const dateStr = d.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    
-    if (!acc[dateStr]) acc[dateStr] = [];
-    acc[dateStr].push(item);
-    return acc;
-  }, {});
-
-  return (
-    <div className="p-5 space-y-8 max-h-[600px] overflow-y-auto">
-      {Object.entries(grouped).map(([dateStr, actions]: [string, any]) => (
-        <div key={dateStr} className="space-y-4">
-          <div className="sticky top-0 bg-white z-20 pb-2 border-b border-zinc-100 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-zinc-400" />
-            <h4 className="font-bold text-zinc-800 text-sm">{dateStr}</h4>
-          </div>
-          
-          <div className="space-y-4 pl-4 pt-2">
-            {actions.map((item: any, idx: number) => (
-              <div key={idx} className="flex gap-4 relative">
-                {idx !== actions.length - 1 && (
-                  <div className="absolute left-3.5 top-7 bottom-[-24px] w-[2px] bg-zinc-100"></div>
-                )}
-                
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 z-10 text-[10px] ${
-                  item.type === 'SALE' ? (item.action === 'REVERSED' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600') : 
-                  (item.action === 'AGENT_DEACTIVATED' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600')
-                }`}>
-                  {item.type === 'SALE' ? <BarChart className="w-3.5 h-3.5" /> : <UserIcon className="w-3.5 h-3.5" />}
-                </div>
-                
-                <div className="flex-1 pb-2">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-zinc-900">
-                      {item.type === 'SALE' ? (
-                        item.action === 'ADDED' ? 'Added sales' : 
-                        item.action === 'EDITED' ? 'Edited sales' : 'Reversed sales'
-                      ) : (
-                        item.action === 'AGENT_ADDED' ? 'Added agent' :
-                        item.action === 'AGENT_UPDATED' ? 'Updated profile' :
-                        item.action === 'AGENT_DEACTIVATED' ? 'Deactivated agent' : 'Activated agent'
-                      )}
-                    </p>
-                    <span className="text-xs text-zinc-500 font-medium px-2 py-0.5 bg-zinc-100 rounded-full">
-                      by {item.managerName}
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-400 mt-0.5">{new Date(item.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  
-                  {item.type === 'SALE' && item.details && (
-                    <div className="mt-2 p-2.5 bg-zinc-50 rounded-lg text-xs text-zinc-600 border border-zinc-100 inline-block">
-                      {item.action === 'ADDED' ? <span className="font-medium text-emerald-600">Count: +{item.details.newAmount}</span> : 
-                       item.action === 'EDITED' ? <span>Changed from <span className="font-medium line-through text-zinc-400">{item.details.previousAmount}</span> to <span className="font-medium text-blue-600">{item.details.newAmount}</span></span> :
-                       <span className="font-medium text-red-600">Reversed count: -{item.details.previousAmount}</span>}
-                    </div>
-                  )}
-                  
-                  {item.type === 'AGENT' && item.details?.note && (
-                    <div className="mt-2 p-2.5 bg-zinc-50 rounded-lg text-xs text-zinc-600 border border-zinc-100">
-                      {item.details.note}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+import { ArrowLeft, Users, Activity, Shield, Mail, Target, BarChart } from "lucide-react";
+import { ManagerActivityTimeline } from "./_components/timelines/ManagerActivityTimeline";
+import { AgentActivityTimeline } from "./_components/timelines/AgentActivityTimeline";
+import { UserProfileCard } from "./_components/ui/UserProfileCard";
+import { useUserDetails } from "./_hooks/useUserDetails";
 
 export default function UserDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  const unwrappedParams = use(params);
-  const userId = parseInt(unwrappedParams.id, 10);
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'agents' | 'activity'>('agents');
-  
-  const { data, isLoading, isError } = useGetUserDetailsQuery(userId, {
-    skip: isNaN(userId),
-  });
+  const { state, actions } = useUserDetails(params);
 
-  const [deleteUser] = useDeleteUserMutation();
-  const [toggleStatus] = useToggleUserStatusMutation();
-
-  const handleDeleteAgent = async (agentId: number) => {
-    if (confirm("Are you sure you want to delete this agent? This cannot be undone.")) {
-      await deleteUser(agentId);
-    }
-  };
-
-  const handleToggleStatus = async (agentId: number, currentStatus: boolean) => {
-    await toggleStatus({ id: agentId, isActive: !currentStatus });
-  };
-
-  const user = data?.data;
-
-  if (isLoading) {
+  if (state.isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-zinc-900"></div>
@@ -249,7 +18,7 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
     );
   }
 
-  if (isError || !user) {
+  if (state.isError || !state.user) {
     return (
       <div className="p-6 text-center">
         <p className="text-red-500 font-medium">Failed to load user details or user not found.</p>
@@ -259,6 +28,8 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
       </div>
     );
   }
+
+  const { user } = state;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 mx-auto pb-10 h-full">
@@ -276,85 +47,7 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
         </div>
       </div>
 
-      {/* Main Profile Card */}
-      <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
-        <div className="w-20 h-20 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 shadow-inner">
-          {user.avatarUrl ? (
-            <img src={user.avatarUrl} alt={user.name} className="w-full h-full rounded-2xl object-cover" />
-          ) : (
-            <span className="text-3xl font-bold uppercase">{user.name.substring(0, 2)}</span>
-          )}
-        </div>
-        
-        <div className="flex-1 space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold text-zinc-900">{user.name}</h2>
-              <p className="text-zinc-500 flex items-center gap-2 mt-1">
-                <UserIcon className="w-4 h-4" /> {user.email}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <span className={`px-3 py-1 text-xs font-bold rounded-full border inline-flex items-center gap-1.5 ${
-                user.role === 'SUPER_ADMIN' ? 'bg-purple-50 text-purple-600 border-purple-200' : 
-                user.role === 'MANAGER' ? 'bg-blue-50 text-blue-600 border-blue-200' : 
-                'bg-zinc-50 text-zinc-600 border-zinc-200'
-              }`}>
-                <Shield className="w-3.5 h-3.5" />
-                {user.role}
-              </span>
-              <span className={`px-3 py-1 text-xs font-bold rounded-full border inline-flex items-center gap-1.5 ${
-                user.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-red-50 text-red-600 border-red-200'
-              }`}>
-                {user.isActive ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                {user.isActive ? 'Active' : 'Blocked'}
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t border-zinc-100">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500">
-                <Briefcase className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs text-zinc-500 font-medium">Assigned Office</p>
-                <p className="text-sm font-semibold text-zinc-900">{user.company?.name || "None"}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs text-zinc-500 font-medium">Joined Date</p>
-                <p className="text-sm font-semibold text-zinc-900">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-
-            {user.role === "MANAGER" && (
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500">
-                  <Users className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500 font-medium">Agent Limit</p>
-                  <p className="text-sm font-semibold text-zinc-900">
-                    {user.agentLimit !== null && user.agentLimit !== undefined ? (
-                       <span>{user.agents?.length || 0} / {user.agentLimit} Used</span>
-                    ) : (
-                       <span>Unlimited</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      <UserProfileCard user={user} />
 
       {/* Role Specific Content */}
       {user.role === "MANAGER" && (
@@ -362,30 +55,30 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
           {/* Tabs */}
           <div className="flex items-center gap-2 border-b border-zinc-200 pb-px">
             <button
-              onClick={() => setActiveTab('agents')}
-              className={`px-4 py-2.5 text-sm font-semibold transition-colors relative ${
-                activeTab === 'agents' ? 'text-indigo-600' : 'text-zinc-500 hover:text-zinc-700'
+              onClick={() => actions.setActiveTab('agents')}
+              className={`px-4 py-2.5 text-sm font-semibold transition-colors relative cursor-pointer ${
+                state.activeTab === 'agents' ? 'text-indigo-600' : 'text-zinc-500 hover:text-zinc-700'
               }`}
             >
               Managed Agents
-              {activeTab === 'agents' && (
+              {state.activeTab === 'agents' && (
                 <span className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
               )}
             </button>
             <button
-              onClick={() => setActiveTab('activity')}
-              className={`px-4 py-2.5 text-sm font-semibold transition-colors relative ${
-                activeTab === 'activity' ? 'text-indigo-600' : 'text-zinc-500 hover:text-zinc-700'
+              onClick={() => actions.setActiveTab('activity')}
+              className={`px-4 py-2.5 text-sm font-semibold transition-colors relative cursor-pointer ${
+                state.activeTab === 'activity' ? 'text-indigo-600' : 'text-zinc-500 hover:text-zinc-700'
               }`}
             >
               Activity History
-              {activeTab === 'activity' && (
+              {state.activeTab === 'activity' && (
                 <span className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
               )}
             </button>
           </div>
 
-          {activeTab === 'agents' && (
+          {state.activeTab === 'agents' && (
             <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -425,20 +118,20 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
                           <td className="px-4 py-4 text-right pr-6">
                             <div className="flex items-center justify-end gap-2">
                               <button 
-                                onClick={() => router.push(`/dashboard/user-management/${agent.id}`)}
-                                className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded hover:bg-indigo-100 transition-colors"
+                                onClick={() => actions.router.push(`/dashboard/user-management/${agent.id}`)}
+                                className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded hover:bg-indigo-100 transition-colors cursor-pointer"
                               >
                                 View Details
                               </button>
                               <button 
-                                onClick={() => handleToggleStatus(agent.id, agent.isActive)}
-                                className={`px-3 py-1 text-xs font-semibold rounded transition-colors ${agent.isActive ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                                onClick={() => actions.handleToggleStatus(agent.id, agent.isActive)}
+                                className={`px-3 py-1 text-xs font-semibold rounded transition-colors cursor-pointer ${agent.isActive ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
                               >
                                 {agent.isActive ? 'Block' : 'Unblock'}
                               </button>
                               <button 
-                                onClick={() => handleDeleteAgent(agent.id)}
-                                className="px-3 py-1 bg-red-50 text-red-600 text-xs font-semibold rounded hover:bg-red-100 transition-colors"
+                                onClick={() => actions.handleDeleteAgent(agent.id)}
+                                className="px-3 py-1 bg-red-50 text-red-600 text-xs font-semibold rounded hover:bg-red-100 transition-colors cursor-pointer"
                               >
                                 Delete
                               </button>
@@ -453,7 +146,7 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
             </div>
           )}
           
-          {activeTab === 'activity' && (
+          {state.activeTab === 'activity' && (
             <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
@@ -592,26 +285,47 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
                     <tr>
                       <th className="px-6 py-4 tracking-wider border-b border-zinc-100">Date</th>
                       <th className="px-6 py-4 tracking-wider border-b border-zinc-100">Sales Count</th>
+                      <th className="px-6 py-4 tracking-wider border-b border-zinc-100">Target Completion</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
                     {!user.performanceRecords || user.performanceRecords.length === 0 ? (
                       <tr>
-                        <td colSpan={2} className="px-6 py-8 text-center text-zinc-500">
+                        <td colSpan={3} className="px-6 py-8 text-center text-zinc-500">
                           No sales history found for this agent.
                         </td>
                       </tr>
                     ) : (
-                      user.performanceRecords.map((record: any, idx: number) => (
-                        <tr key={idx} className="hover:bg-zinc-50/50 transition-colors">
-                          <td className="px-6 py-4 text-zinc-500 font-medium">
-                            {new Date(record.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="font-bold text-zinc-900 bg-zinc-100 px-3 py-1 rounded-full">{record.salesCount}</span>
-                          </td>
-                        </tr>
-                      ))
+                      user.performanceRecords.map((record: any, idx: number) => {
+                        const target = user.dailyGoal || 1;
+                        const percentage = Math.min(100, Math.round((record.salesCount / target) * 100));
+                        
+                        return (
+                          <tr key={idx} className="hover:bg-zinc-50/50 transition-colors">
+                            <td className="px-6 py-4 text-zinc-500 font-medium">
+                              {new Date(record.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="font-bold text-zinc-900 bg-zinc-100 px-3 py-1 rounded-full">
+                                {record.salesCount} <span className="text-zinc-400 text-[11px] font-medium ml-1">/ {user.dailyGoal || 0}</span>
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 w-[35%]">
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full rounded-full transition-all duration-500 ${percentage >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                    style={{ width: `${percentage}%` }}
+                                  ></div>
+                                </div>
+                                <span className={`text-xs font-bold w-10 text-right ${percentage >= 100 ? 'text-emerald-600' : 'text-zinc-500'}`}>
+                                  {percentage}%
+                                </span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

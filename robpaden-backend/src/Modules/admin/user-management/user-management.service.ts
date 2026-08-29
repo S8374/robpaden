@@ -38,12 +38,17 @@ export class UserManagementService {
       companyLogoUrl = company.settings?.logoUrl || "";
     }
 
+    let managerEmail = "";
+    let managerName = "";
+
     // Check if manager exists if provided
     if (data.managerId) {
       const manager = await this.prisma.user.findUnique({ where: { id: data.managerId } });
       if (!manager || manager.role !== "MANAGER") {
         throw new NotFoundError("Manager not found or invalid role");
       }
+      managerEmail = manager.email;
+      managerName = manager.name;
     }
 
     // Encrypt the provided password
@@ -86,6 +91,18 @@ export class UserManagementService {
     }).catch(e => {
       this.logger.error(`Error sending welcome email in background`, e);
     });
+
+    // Notify manager if an agent was added under them
+    if (data.role === 'AGENT' && data.managerId && managerEmail) {
+      this.emailService.sendManagerNewAgentNotification(
+        managerEmail,
+        managerName,
+        userName,
+        data.email
+      ).catch(e => {
+        this.logger.error(`Error sending manager notification in background`, e);
+      });
+    }
 
     return {
       user: {

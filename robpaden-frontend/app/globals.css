@@ -204,6 +204,11 @@
   50% { transform: translateY(-10px); }
 }
 
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @keyframes text-glow {
   0%, 100% { text-shadow: 0 0 10px rgba(250, 204, 21, 0.4), 0 0 20px rgba(250, 204, 21, 0.2); }
   50% { text-shadow: 0 0 20px rgba(250, 204, 21, 0.8), 0 0 30px rgba(250, 204, 21, 0.6); }
@@ -265,6 +270,9 @@
   }
   .animate-text-glow {
     animation: text-glow 2s ease-in-out infinite;
+  }
+  .animate-spin-slow {
+    animation: spin-slow 12s linear infinite;
   }
   .animate-energy-flow {
     background: 

@@ -27,3 +27,13 @@ First Reade it than start worked .
 --> Implemented "Remember Me" functionality in the manager frontend login page (`localStorage` saving/loading).
 --> Built a complete 3-step "Forgot Password" flow (`app/forgot-password/page.tsx`).
 --> Connected the new forgot password API endpoints to the frontend using RTK Query in `auth.api.ts`.
+--> Refactored Admin User Details Page by extracting UI and logic into local _components and _hooks directories.
+--> Refactored Admin Dashboard Overview by moving all dashboard widgets into components/dashboard/.
+--> Created Bruno API Collections for the Manager Report module (/manager/reports/*).
+--> Created Bruno API Collections for the Manager Notifications module (/notifications).
+--> Fixed rendering issues in Manager Performance Bruno collections by converting legacy .bru files to the supported .yml format with corrected JSON bodies.
+--> Refactored the frontend Forgot Password page (app/forgot-password/page.tsx) using the enterprise architecture, extracting the state into a useForgotPassword hook and splitting the UI into RequestOtpForm, VerifyOtpForm, and ResetPasswordForm components.
+--> Implemented the live API connection for the TV Board (\pp/tv/[companyId]/page.tsx\) with support for multiple offices via URL path matching.
+--> Updated the backend \	v.service.ts\ to calculate Team Goal progress, Daily Recognition (First Sale, Most Sale, Closest to Goal), and the live Bell Ringer.
+--> Created \useGetTVBoardQuery\ in \edux/api/tv.api.ts\ with a 10-second polling interval for live TV updates.
+--> Reverted the dynamic logo logic in the TV Board header to always use the fixed \/images/tvsidelogo.png\ (American Energy Advisors) per the client's visual requirements.

@@ -110,11 +110,20 @@ export class ReportService {
 
   public async getSalesByAgent(managerId: number, range: string, customStart?: string, customEnd?: string) {
     const { startDate, endDate } = this.getDateRange(range, customStart, customEnd);
-    const now = new Date();
-    const startOfToday = startOfDay(now);
-    const endOfToday = endOfDay(now);
-    const startOfThisWeek = startOfWeek(now, { weekStartsOn: 1 });
-    const endOfThisWeek = endOfWeek(now, { weekStartsOn: 1 });
+    
+    // Shift "Today" and "This Week" to be relative to the requested startDate
+    const referenceDate = startDate;
+    const startOfTargetDay = startOfDay(referenceDate);
+    const endOfTargetDay = endOfDay(referenceDate);
+    
+    // If range is explicitly multiple days (like 'week' or 'month' or a long custom range),
+    // we use the full range for the "Daily" column (which really means "Period Total" in that context).
+    // If it's a single day, startOfTargetDay and endOfTargetDay will just be that day.
+    const periodStart = startDate;
+    const periodEnd = endDate;
+
+    const startOfTargetWeek = startOfWeek(referenceDate, { weekStartsOn: 1 });
+    const endOfTargetWeek = endOfWeek(referenceDate, { weekStartsOn: 1 });
 
     // We fetch ALL active agents for this manager
     const agents = await this.prisma.user.findMany({
@@ -123,19 +132,23 @@ export class ReportService {
     });
 
     // Fetch sales for daily and weekly rankings
+    // We need to fetch from the earliest of periodStart and startOfTargetWeek, to the latest.
+    const fetchStart = periodStart < startOfTargetWeek ? periodStart : startOfTargetWeek;
+    const fetchEnd = periodEnd > endOfTargetWeek ? periodEnd : endOfTargetWeek;
+
     const allRecentSales = await this.prisma.sale.findMany({
       where: {
         agent: { managerId },
         status: "CONFIRMED",
-        createdAt: { gte: startOfThisWeek, lte: endOfToday }
+        createdAt: { gte: fetchStart, lte: fetchEnd }
       }
     });
 
-    // Calculate daily and weekly totals for all agents to determine rank
+    // Calculate period and weekly totals for all agents to determine rank
     const agentStats = agents.map(agent => {
-      const dailySales = allRecentSales.filter(s => s.agentId === agent.id && s.createdAt >= startOfToday && s.createdAt <= endOfToday).reduce((sum, s) => sum + s.amount, 0);
-      const weeklySales = allRecentSales.filter(s => s.agentId === agent.id && s.createdAt >= startOfThisWeek && s.createdAt <= endOfThisWeek).reduce((sum, s) => sum + s.amount, 0);
-      return { ...agent, dailySales, weeklySales };
+      const periodSales = allRecentSales.filter(s => s.agentId === agent.id && s.createdAt >= periodStart && s.createdAt <= periodEnd).reduce((sum, s) => sum + s.amount, 0);
+      const weeklySales = allRecentSales.filter(s => s.agentId === agent.id && s.createdAt >= startOfTargetWeek && s.createdAt <= endOfTargetWeek).reduce((sum, s) => sum + s.amount, 0);
+      return { ...agent, dailySales: periodSales, weeklySales: weeklySales };
     });
 
     // Sort to determine ranks
@@ -228,9 +241,21 @@ export class ReportService {
     });
   }
 
-  public async getReportHistory(managerId: number) {
+  public async getReportHistory(managerId: number, range?: string, customStart?: string, customEnd?: string) {
+    if (!range) {
+      return this.prisma.reportHistory.findMany({
+        where: { managerId },
+        orderBy: { date: "desc" }
+      });
+    }
+
+    const { startDate, endDate } = this.getDateRange(range, customStart, customEnd);
+    
     return this.prisma.reportHistory.findMany({
-      where: { managerId },
+      where: { 
+        managerId,
+        date: { gte: startDate, lte: endDate }
+      },
       orderBy: { date: "desc" }
     });
   }

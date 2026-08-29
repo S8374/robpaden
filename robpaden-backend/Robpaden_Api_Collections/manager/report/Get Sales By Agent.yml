@@ -1,0 +1,15 @@
+info:
+  name: Get Sales By Agent
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{baseUrl}}/manager/reports/sales-by-agent?range=today"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
