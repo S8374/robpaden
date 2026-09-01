@@ -5,7 +5,11 @@ info:
 
 http:
   method: GET
-  url: "{{baseUrl}}/tv/board/1"
+  url: "{{baseUrl}}/tv/board?password=your_tv_password"
+
+headers:
+  x-device-id: example_device_id
+  x-device-name: Chrome Browser
 
 settings:
   encodeUrl: true

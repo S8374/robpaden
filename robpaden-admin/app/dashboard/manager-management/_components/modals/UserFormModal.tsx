@@ -16,6 +16,7 @@ interface UserFormModalProps {
   closeModal: () => void;
   offices: any[];
   managersList: any[];
+  fixedRole?: "MANAGER" | "AGENT";
 }
 
 export function UserFormModal({
@@ -32,7 +33,14 @@ export function UserFormModal({
   closeModal,
   offices,
   managersList,
+  fixedRole,
 }: UserFormModalProps) {
+  React.useEffect(() => {
+    if (isOpen && fixedRole && formData.role !== fixedRole) {
+      setFormData({ ...formData, role: fixedRole });
+    }
+  }, [isOpen, fixedRole, formData.role, setFormData]);
+
   if (!isOpen) return null;
 
   return (
@@ -96,18 +104,20 @@ export function UserFormModal({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="role" className="block text-sm font-semibold text-zinc-700 mb-1.5">Role *</label>
-            <select 
-              id="role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value, companyId: "", managerId: "" })}
-              className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
-            >
-              <option value="MANAGER">Manager</option>
-              <option value="AGENT">Agent</option>
-            </select>
-          </div>
+          {!fixedRole && (
+            <div>
+              <label htmlFor="role" className="block text-sm font-semibold text-zinc-700 mb-1.5">Role *</label>
+              <select 
+                id="role"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value, companyId: "", managerId: "" })}
+                className="w-full px-4 py-2.5 rounded-lg border border-zinc-200 bg-zinc-50 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/20 focus:border-zinc-900 focus:bg-white transition-all"
+              >
+                <option value="MANAGER">Manager</option>
+                <option value="AGENT">Agent</option>
+              </select>
+            </div>
+          )}
 
           {formData.role === "MANAGER" && (
             <div className="animate-in slide-in-from-top-2 duration-300">

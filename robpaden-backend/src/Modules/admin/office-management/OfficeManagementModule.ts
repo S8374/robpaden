@@ -62,5 +62,23 @@ export class OfficeManagementModule extends BaseModule {
       "/:id",
       controller.deleteOffice.bind(controller)
     );
+
+    // GET /admin/v1/offices/:id/tv-devices
+    this.router.get(
+      "/:id/tv-devices",
+      controller.getTvDevices.bind(controller)
+    );
+
+    // DELETE /admin/v1/offices/tv-devices/:deviceId
+    this.router.delete(
+      "/tv-devices/:deviceId",
+      controller.deleteTvDevice.bind(controller)
+    );
+
+    // PATCH /admin/v1/offices/tv-devices/:deviceId/block
+    this.router.patch(
+      "/tv-devices/:deviceId/block",
+      controller.blockTvDevice.bind(controller)
+    );
   }
 }

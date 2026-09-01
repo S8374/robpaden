@@ -42,13 +42,7 @@ export default function OfficesPage() {
         editingOffice={state.editingOffice}
         formData={state.formData}
         setFormData={actions.setFormData}
-        logoFile={state.logoFile}
-        setLogoFile={actions.setLogoFile}
-        celebrationSoundFile={state.celebrationSoundFile}
-        setCelebrationSoundFile={actions.setCelebrationSoundFile}
         errorMsg={state.errorMsg}
-        fileInputRef={state.fileInputRef}
-        soundInputRef={state.soundInputRef}
         isCreating={state.isCreating}
         isUpdating={state.isUpdating}
         handleCreateOrUpdateOffice={actions.handleCreateOrUpdateOffice}

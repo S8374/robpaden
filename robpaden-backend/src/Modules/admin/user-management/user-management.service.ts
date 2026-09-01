@@ -121,10 +121,15 @@ export class UserManagementService {
     this.logger.info("Fetching all users");
     const users = await this.prisma.user.findMany({
       where: {
-        role: "MANAGER"
+        role: { in: ["MANAGER", "AGENT"] }
       },
       include: {
         company: true,
+        manager: {
+          include: {
+            company: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -140,8 +145,8 @@ export class UserManagementService {
     });
   }
 
-  public async getUserDetails(id: number) {
-    this.logger.info("Fetching user details", { userId: id });
+  public async getUserDetails(id: number, targetMonth?: number, targetYear?: number) {
+    this.logger.info("Fetching user details", { userId: id, targetMonth, targetYear });
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -218,12 +223,82 @@ export class UserManagementService {
       }) as any;
     }
 
-    if (user.role === "AGENT" && (user as any).performanceRecords) {
+    // Helper: Generate all days for a specific month in ascending order
+    const generateMonthDays = (month: number, year: number) => {
+      const days = [];
+      const daysInMonth = new Date(year, month, 0).getDate();
+      for (let i = 1; i <= daysInMonth; i++) {
+        // Generate days in ascending order (1st to end of month)
+        const d = new Date(year, month - 1, i);
+        d.setHours(0,0,0,0);
+        days.push(d);
+      }
+      return { days, daysInMonth };
+    };
+    
+    const activeMonth = targetMonth || (new Date().getMonth() + 1);
+    const activeYear = targetYear || new Date().getFullYear();
+
+    if (user.role === "MANAGER") {
+      // Create a unified timeline aggregating all agents' sales
+      const { days: monthDays, daysInMonth } = generateMonthDays(activeMonth, activeYear);
+      const salesHistory = monthDays.map(date => {
+        const dateTime = date.getTime();
+        let totalSales = 0;
+        let totalTarget = 0;
+
+        if (user.agents) {
+          user.agents.forEach((agent: any) => {
+            totalTarget += agent.dailyGoal || 1; 
+          });
+        }
+        return { date, salesCount: totalSales, target: totalTarget > 0 ? totalTarget : 1, percentage: 0 };
+      });
+
+      // Quickest way to get accurate manager timeline: Query DB
+      const startDate = new Date(activeYear, activeMonth - 1, 1);
+      const endDate = new Date(activeYear, activeMonth, 1); // 1st of next month for < bound
+
+      const managerRecords = await this.prisma.performanceRecord.findMany({
+        where: {
+          agent: { managerId: user.id },
+          period: 'DAILY',
+          startDate: { gte: startDate, lt: endDate }
+        }
+      });
+
+      const aggregatedByDate: Record<number, { count: number, target: number }> = {};
+      managerRecords.forEach(record => {
+        const recordTime = new Date(record.startDate).setHours(0,0,0,0);
+        if (!aggregatedByDate[recordTime]) aggregatedByDate[recordTime] = { count: 0, target: 0 };
+        aggregatedByDate[recordTime].count += record.salesCount;
+      });
+
+      // Recalculate targets by summing up current agents' targets
+      let baseTarget = 0;
+      const agentsList = await this.prisma.user.findMany({ where: { managerId: user.id, role: 'AGENT', isActive: true }});
+      agentsList.forEach(a => baseTarget += (a.dailyGoal || 1));
+      if (baseTarget === 0) baseTarget = 1;
+
+      (user as any).salesHistory = monthDays.map(date => {
+        const time = date.getTime();
+        const data = aggregatedByDate[time] || { count: 0 };
+        const percentage = Math.min(100, Math.round((data.count / baseTarget) * 100));
+        return {
+          date: date.toISOString(),
+          salesCount: data.count,
+          target: baseTarget,
+          percentage
+        };
+      });
+    }
+
+    if (user.role === "AGENT") {
       let dailySales = 0;
       let weeklySales = 0;
       let monthlySales = 0;
 
-      (user as any).performanceRecords.forEach((record: any) => {
+      (user as any).performanceRecords?.forEach((record: any) => {
         const recordTime = new Date(record.startDate).getTime();
 
         if (record.period === 'DAILY' && recordTime === todayTime) {
@@ -243,10 +318,33 @@ export class UserManagementService {
         monthly: monthlySales
       };
       
-      // Filter performance records to only show DAILY history in the UI
-      (user as any).performanceRecords = (user as any).performanceRecords.filter(
-        (r: any) => r.period === 'DAILY'
-      );
+      // Generate padded timeline based on month length
+      const { days: monthDays } = generateMonthDays(activeMonth, activeYear);
+      const recordsByDate: Record<number, any> = {};
+      
+      (user as any).performanceRecords?.forEach((r: any) => {
+        if (r.period === 'DAILY') {
+          recordsByDate[new Date(r.startDate).setHours(0,0,0,0)] = r;
+        }
+      });
+
+      const target = user.dailyGoal || 1;
+      (user as any).salesHistory = monthDays.map(date => {
+        const time = date.getTime();
+        const record = recordsByDate[time];
+        const count = record ? record.salesCount : 0;
+        const percentage = Math.min(100, Math.round((count / target) * 100));
+        
+        return {
+          date: date.toISOString(),
+          salesCount: count,
+          target,
+          percentage
+        };
+      });
+
+      // We can clear performanceRecords to save payload size
+      (user as any).performanceRecords = [];
     }
 
     return user;
@@ -344,18 +442,28 @@ export class UserManagementService {
     };
   }
 
-  public async getManagerActivityTimeline(managerId: number) {
-    this.logger.info("Fetching activity timeline for manager", { managerId });
+  public async getManagerActivityTimeline(managerId: number, targetMonth?: number, targetYear?: number) {
+    this.logger.info("Fetching activity timeline for manager", { managerId, targetMonth, targetYear });
+
+    let dateFilter = {};
+    if (targetMonth && targetYear) {
+      const startDate = new Date(targetYear, targetMonth - 1, 1);
+      const endDate = new Date(targetYear, targetMonth, 1);
+      
+      dateFilter = {
+        date: { gte: startDate, lt: endDate }
+      };
+    }
 
     // 1. Fetch Sales Audit Logs
     const salesLogs = await this.prisma.salesAuditLog.findMany({
-      where: { managerId },
+      where: { managerId, ...dateFilter },
       include: { agent: { select: { name: true } } }
     });
 
     // 2. Fetch Agent Activity Logs
     const agentLogs = await this.prisma.agentActivityLog.findMany({
-      where: { managerId },
+      where: { managerId, ...dateFilter },
       include: { agent: { select: { name: true } } }
     });
 

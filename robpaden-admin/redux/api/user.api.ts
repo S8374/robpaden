@@ -36,12 +36,20 @@ const userApi = baseApi.injectEndpoints({
       providesTags: ["Users"],
     }),
 
-    getUserDetails: builder.query<ApiResponse<any>, number>({
-      query: (id) => ({
-        url: `/admin/v1/users/${id}/details`,
-        method: "GET",
-      }),
-      providesTags: (result, error, id) => [{ type: "Users", id }],
+    getUserDetails: builder.query<ApiResponse<any>, { id: number, month?: number, year?: number }>({
+      query: ({ id, month, year }) => {
+        let url = `/admin/v1/users/${id}/details`;
+        const params = new URLSearchParams();
+        if (month) params.append("month", month.toString());
+        if (year) params.append("year", year.toString());
+        
+        if (params.toString()) {
+          url += `?${params.toString()}`;
+        }
+        
+        return { url, method: "GET" };
+      },
+      providesTags: (result, error, { id }) => [{ type: "Users", id }],
     }),
     
     createUser: builder.mutation<ApiResponse<any>, any>({
@@ -78,12 +86,20 @@ const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Users"],
     }),
-    getManagerActivityTimeline: builder.query<ApiResponse<any[]>, number>({
-      query: (id) => ({
-        url: `/admin/v1/users/${id}/activity`,
-        method: "GET",
-      }),
-      providesTags: (result, error, id) => [{ type: "Users", id }, "AgentAudit"],
+    getManagerActivityTimeline: builder.query<ApiResponse<any[]>, { id: number, month?: number, year?: number }>({
+      query: ({ id, month, year }) => {
+        let url = `/admin/v1/users/${id}/activity`;
+        const params = new URLSearchParams();
+        if (month) params.append("month", month.toString());
+        if (year) params.append("year", year.toString());
+        
+        if (params.toString()) {
+          url += `?${params.toString()}`;
+        }
+        
+        return { url, method: "GET" };
+      },
+      providesTags: (result, error, { id }) => [{ type: "Users", id }, "AgentAudit"],
     }),
     getAgentActivityTimeline: builder.query<ApiResponse<any[]>, number>({
       query: (id) => ({

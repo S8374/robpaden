@@ -13,8 +13,8 @@ export default function UsersPage() {
     <div className="space-y-6 animate-in fade-in duration-500 mx-auto pb-10 h-full flex flex-col relative">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">User Management</h1>
-          <p className="text-sm text-zinc-500 mt-1">Manage managers, agents, and their access across the platform.</p>
+          <h1 className="text-2xl font-bold text-zinc-900">Manager Management</h1>
+          <p className="text-sm text-zinc-500 mt-1">Manage managers and their access across the platform.</p>
         </div>
         <div className="flex gap-3">
           <button 
@@ -22,7 +22,7 @@ export default function UsersPage() {
             className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm flex items-center gap-2 cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            Create User
+            Create Manager
           </button>
         </div>
       </div>
@@ -43,7 +43,7 @@ export default function UsersPage() {
         </div>
 
         <UsersTable 
-          users={state.users}
+          users={state.users.filter((user: any) => user.role === "MANAGER")}
           isLoading={state.isLoading}
           isFetching={state.isFetching}
           openActionMenuId={state.openActionMenuId}
@@ -70,6 +70,7 @@ export default function UsersPage() {
         closeModal={() => actions.setIsModalOpen(false)}
         offices={state.offices}
         managersList={state.managersList}
+        fixedRole="MANAGER"
       />
 
       <UserFormModal 
@@ -86,6 +87,7 @@ export default function UsersPage() {
         closeModal={() => actions.setIsEditModalOpen(false)}
         offices={state.offices}
         managersList={state.managersList}
+        fixedRole="MANAGER"
       />
 
       <DeleteUserModal 

@@ -10,13 +10,7 @@ interface OfficeFormModalProps {
   editingOffice: Office | null;
   formData: any;
   setFormData: (data: any) => void;
-  logoFile: File | null;
-  setLogoFile: (file: File | null) => void;
-  celebrationSoundFile: File | null;
-  setCelebrationSoundFile: (file: File | null) => void;
   errorMsg: string;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  soundInputRef: React.RefObject<HTMLInputElement | null>;
   isCreating: boolean;
   isUpdating: boolean;
   handleCreateOrUpdateOffice: (e: React.FormEvent) => void;
@@ -28,13 +22,7 @@ export function OfficeFormModal({
   editingOffice,
   formData,
   setFormData,
-  logoFile,
-  setLogoFile,
-  celebrationSoundFile,
-  setCelebrationSoundFile,
   errorMsg,
-  fileInputRef,
-  soundInputRef,
   isCreating,
   isUpdating,
   handleCreateOrUpdateOffice,
@@ -69,57 +57,7 @@ export function OfficeFormModal({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-1.5">Office Logo</label>
-            <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full px-4 py-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 hover:bg-zinc-100 cursor-pointer flex items-center gap-3 transition-colors"
-            >
-              <div className="w-8 h-8 rounded bg-white border border-zinc-200 flex items-center justify-center text-zinc-400">
-                <Upload className="w-4 h-4" />
-              </div>
-              <div className="text-sm">
-                {logoFile ? (
-                  <span className="font-medium text-zinc-900">{logoFile.name}</span>
-                ) : (
-                  <span className="text-zinc-500">Click to upload a logo image...</span>
-                )}
-              </div>
-            </div>
-            <input 
-              type="file" 
-              ref={fileInputRef}
-              onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
-              className="hidden"
-              accept="image/*"
-            />
-          </div>
 
-          <div>
-            <label className="block text-sm font-semibold text-zinc-700 mb-1.5">TV Celebration Sound/Video</label>
-            <div 
-              onClick={() => soundInputRef.current?.click()}
-              className="w-full px-4 py-3 rounded-lg border border-dashed border-zinc-300 bg-zinc-50 hover:bg-zinc-100 cursor-pointer flex items-center gap-3 transition-colors"
-            >
-              <div className="w-8 h-8 rounded bg-white border border-zinc-200 flex items-center justify-center text-zinc-400">
-                <Upload className="w-4 h-4" />
-              </div>
-              <div className="text-sm">
-                {celebrationSoundFile ? (
-                  <span className="font-medium text-zinc-900">{celebrationSoundFile.name}</span>
-                ) : (
-                  <span className="text-zinc-500">Click to upload a sound/video file...</span>
-                )}
-              </div>
-            </div>
-            <input 
-              type="file" 
-              ref={soundInputRef}
-              onChange={(e) => setCelebrationSoundFile(e.target.files?.[0] || null)}
-              className="hidden"
-              accept="audio/*,video/*"
-            />
-          </div>
 
           <div>
             <label htmlFor="timeZone" className="block text-sm font-semibold text-zinc-700 mb-1.5">Time Zone</label>

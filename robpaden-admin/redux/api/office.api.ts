@@ -6,7 +6,9 @@ export interface Office {
   settings?: {
     companyName?: string;
     logoUrl?: string;
+    celebrationSoundUrl?: string;
     tvTheme?: string;
+    tvPassword?: string;
     dailyGoal?: number;
     weeklyGoal?: number;
     monthlyGoal?: number;
@@ -21,6 +23,16 @@ export interface Office {
   agents?: { id: number; name: string }[];
 }
 
+
+export interface TvDevice {
+  id: string;
+  companyId: number;
+  deviceName: string;
+  deviceId: string;
+  isBlocked: boolean;
+  lastSeenAt: string;
+  createdAt: string;
+}
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -61,6 +73,28 @@ const officeApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Offices", "DashboardStats"],
     }),
+    getTvDevices: builder.query<ApiResponse<TvDevice[]>, number>({
+      query: (officeId) => ({
+        url: `/admin/v1/offices/${officeId}/tv-devices`,
+        method: "GET",
+      }),
+      providesTags: ["Offices"], // using the same tag for simplicity
+    }),
+    deleteTvDevice: builder.mutation<ApiResponse<any>, string>({
+      query: (deviceId) => ({
+        url: `/admin/v1/offices/tv-devices/${deviceId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Offices"],
+    }),
+    blockTvDevice: builder.mutation<ApiResponse<any>, { deviceId: string; isBlocked: boolean }>({
+      query: ({ deviceId, isBlocked }) => ({
+        url: `/admin/v1/offices/tv-devices/${deviceId}/block`,
+        method: "PATCH",
+        data: { isBlocked },
+      }),
+      invalidatesTags: ["Offices"],
+    }),
   }),
 });
 
@@ -69,4 +103,7 @@ export const {
   useCreateOfficeMutation,
   useUpdateOfficeMutation,
   useDeleteOfficeMutation,
+  useGetTvDevicesQuery,
+  useDeleteTvDeviceMutation,
+  useBlockTvDeviceMutation,
 } = officeApi;

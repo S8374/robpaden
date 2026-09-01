@@ -176,4 +176,31 @@ export class OfficeManagementService {
     this.logger.info("Company deleted successfully", { companyId: id });
   }
 
+  public async getTvDevices(officeId: number) {
+    this.logger.info("Fetching TV devices for office", { officeId });
+    return this.prisma.tvDevice.findMany({
+      where: { companyId: officeId },
+      orderBy: { lastSeenAt: 'desc' }
+    });
+  }
+
+  public async deleteTvDevice(id: string) {
+    this.logger.info("Deleting TV device", { deviceId: id });
+    const device = await this.prisma.tvDevice.findUnique({ where: { id } });
+    if (!device) throw new NotFoundError("Device not found");
+    
+    await this.prisma.tvDevice.delete({ where: { id } });
+  }
+
+  public async blockTvDevice(id: string, isBlocked: boolean) {
+    this.logger.info(`Setting device blocked status to ${isBlocked}`, { deviceId: id });
+    const device = await this.prisma.tvDevice.findUnique({ where: { id } });
+    if (!device) throw new NotFoundError("Device not found");
+
+    return this.prisma.tvDevice.update({
+      where: { id },
+      data: { isBlocked }
+    });
+  }
+
 }

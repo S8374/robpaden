@@ -1,0 +1,21 @@
+info:
+  name: Block TV Device
+  type: http
+  seq: 3
+
+http:
+  method: PATCH
+  url: "{{baseUrl}}/admin/v1/offices/tv-devices/1/block"
+  body:
+    type: json
+    data: |
+      {
+        "isBlocked": true
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

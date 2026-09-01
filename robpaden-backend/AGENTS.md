@@ -85,7 +85,10 @@ First Reade it than start worked .
 --> Created Bruno API Collections for the Manager Notifications module (/notifications).
 --> Fixed rendering issues in Manager Performance Bruno collections by converting legacy .bru files to the supported .yml format with corrected JSON bodies.
 --> Refactored the frontend Forgot Password page (app/forgot-password/page.tsx) using the enterprise architecture, extracting the state into a useForgotPassword hook and splitting the UI into RequestOtpForm, VerifyOtpForm, and ResetPasswordForm components.
---> Implemented the live API connection for the TV Board (\pp/tv/[companyId]/page.tsx\) with support for multiple offices via URL path matching.
---> Updated the backend \	v.service.ts\ to calculate Team Goal progress, Daily Recognition (First Sale, Most Sale, Closest to Goal), and the live Bell Ringer.
---> Created \useGetTVBoardQuery\ in \edux/api/tv.api.ts\ with a 10-second polling interval for live TV updates.
+--> Implemented the live API connection for the TV Board (\app/tv/[companyId]/page.tsx\) with support for multiple offices via URL path matching.
+--> Updated the backend \tv.service.ts\ to calculate Team Goal progress, Daily Recognition (First Sale, Most Sale, Closest to Goal), and the live Bell Ringer.
+--> Created \useGetTVBoardQuery\ in \redux/api/tv.api.ts\ with a 10-second polling interval for live TV updates.
 --> Reverted the dynamic logo logic in the TV Board header to always use the fixed \/images/tvsidelogo.png\ (American Energy Advisors) per the client's visual requirements.
+--> Built an advanced "TV Device Management" system. The TV board requires a password to log in. The backend logs the device ID, and the Admin can view, block, or remove these connected TV devices from the Admin Dashboard (TV Themes page).
+--> Implemented a dedicated POST `/tv/login` endpoint so the 10-second polling (`/tv/board`) only acts as a heartbeat. This allowed immediate logout detection when an admin removes a device.
+--> Refactored the massive 750+ line TV Board frontend page into a clean enterprise structure under `app/tv/`, extracting `useTVBoardData` into `_hooks`, and splitting the UI into granular components inside `_components/ui/`, `_components/auth/`, and `_components/tables/`.

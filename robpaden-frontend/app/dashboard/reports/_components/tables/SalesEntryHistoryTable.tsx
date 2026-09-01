@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 interface SalesEntryHistoryTableProps {
   isLoading?: boolean;
   entryHistory?: any[];
@@ -5,6 +8,16 @@ interface SalesEntryHistoryTableProps {
 
 export function SalesEntryHistoryTable({ isLoading, entryHistory }: SalesEntryHistoryTableProps) {
   const data = entryHistory || [];
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  const totalPages = Math.ceil(data.length / itemsPerPage);
+  
+  // Calculate current slice
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = data.slice(startIndex, endIndex);
 
   const formatTime = (timeStr: string) => {
     return new Date(timeStr).toLocaleTimeString("en-US", { hour: 'numeric', minute: '2-digit', hour12: true });
@@ -38,10 +51,10 @@ export function SalesEntryHistoryTable({ isLoading, entryHistory }: SalesEntryHi
                 <div className="w-32 h-3 bg-zinc-100 rounded"></div>
               </div>
             ))
-          ) : data.length === 0 ? (
+          ) : currentData.length === 0 ? (
             <div className="p-8 text-center text-zinc-500 text-sm">No entry history found for this period.</div>
           ) : (
-            data.map((entry) => (
+            currentData.map((entry) => (
               <div key={`mob-${entry.id}`} className="p-4 hover:bg-zinc-50/50 transition-colors">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center gap-3">
@@ -112,12 +125,12 @@ export function SalesEntryHistoryTable({ isLoading, entryHistory }: SalesEntryHi
                   </td>
                 </tr>
               ))
-            ) : data.length === 0 ? (
+            ) : currentData.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">No entry history found for this period.</td>
               </tr>
             ) : (
-              data.map((entry) => (
+              currentData.map((entry) => (
                 <tr key={entry.id} className="hover:bg-zinc-50/50 transition-colors">
                   <td className="px-6 py-4 text-zinc-500 font-medium text-[13px]">
                     {formatTime(entry.time)}
@@ -151,6 +164,46 @@ export function SalesEntryHistoryTable({ isLoading, entryHistory }: SalesEntryHi
           </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {!isLoading && data.length > 0 && totalPages > 1 && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-100 bg-white">
+            <span className="text-sm text-zinc-500">
+              Showing <span className="font-medium text-zinc-900">{startIndex + 1}</span> to <span className="font-medium text-zinc-900">{Math.min(endIndex, data.length)}</span> of <span className="font-medium text-zinc-900">{data.length}</span> entries
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded border border-zinc-200 text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`w-8 h-8 rounded text-sm font-medium transition-colors ${
+                      currentPage === page 
+                        ? 'bg-blue-600 text-white border border-blue-600' 
+                        : 'border border-zinc-200 text-zinc-600 hover:bg-zinc-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded border border-zinc-200 text-zinc-600 hover:bg-zinc-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

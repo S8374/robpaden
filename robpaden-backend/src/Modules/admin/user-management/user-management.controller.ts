@@ -48,15 +48,21 @@ export class UserManagementController extends BaseController {
 
   public async getUserDetails(req: Request, res: Response) {
     const id = parseInt(req.params.id as string, 10);
-    this.logger.info("Received request to fetch user details", { userId: id });
-    const result = await this.userManagementService.getUserDetails(id);
+    const month = req.query.month ? parseInt(req.query.month as string, 10) : undefined;
+    const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
+    
+    this.logger.info("Received request to fetch user details", { userId: id, month, year });
+    const result = await this.userManagementService.getUserDetails(id, month, year);
     return this.sendResponse(req, res, "User details retrieved successfully", 200, result);
   }
 
   public async getManagerActivityTimeline(req: Request, res: Response) {
     const id = parseInt(req.params.id as string, 10);
-    this.logger.info("Received request to fetch manager activity timeline", { managerId: id });
-    const result = await this.userManagementService.getManagerActivityTimeline(id);
+    const month = req.query.month ? parseInt(req.query.month as string, 10) : undefined;
+    const year = req.query.year ? parseInt(req.query.year as string, 10) : undefined;
+
+    this.logger.info("Received request to fetch manager activity timeline", { managerId: id, month, year });
+    const result = await this.userManagementService.getManagerActivityTimeline(id, month, year);
     return this.sendResponse(req, res, "Activity timeline retrieved successfully", 200, result);
   }
   public async getAgentActivityTimeline(req: Request, res: Response) {

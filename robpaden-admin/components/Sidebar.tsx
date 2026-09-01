@@ -53,18 +53,20 @@ export function Sidebar() {
             <Briefcase className={`w-5 h-5 ${pathname === '/dashboard/offices' ? 'text-zinc-900' : 'text-zinc-500'}`} />
             Office Management
           </Link>
-          <Link href="/dashboard/user-management" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/dashboard/user-management')}`}>
-            <Users className={`w-5 h-5 ${pathname === '/dashboard/user-management' ? 'text-zinc-900' : 'text-zinc-500'}`} />
-            User Management
+          <Link href="/dashboard/manager-management" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/dashboard/manager-management')}`}>
+            <Users className={`w-5 h-5 ${pathname === '/dashboard/manager-management' ? 'text-zinc-900' : 'text-zinc-500'}`} />
+            Manager Management
+          </Link>
+          <Link href="/dashboard/agent-management" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/dashboard/agent-management')}`}>
+            <Users className={`w-5 h-5 ${pathname === '/dashboard/agent-management' ? 'text-zinc-900' : 'text-zinc-500'}`} />
+            Agent Management
           </Link>
         </div>
         <div className="pt-4">
           <p className="px-3 text-xs font-bold text-zinc-400 uppercase tracking-wider mb-2">Configuration</p>
-          <Link href="#" className="flex items-center justify-between px-3 py-2.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 font-medium transition-colors">
-            <div className="flex items-center gap-3">
-              <MonitorPlay className="w-5 h-5" />
-              TV Themes
-            </div>
+          <Link href="/dashboard/tv-themes" className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${isActive('/dashboard/tv-themes')}`}>
+            <MonitorPlay className={`w-5 h-5 ${pathname === '/dashboard/tv-themes' ? 'text-zinc-900' : 'text-zinc-500'}`} />
+            TV Themes
           </Link>
         </div>
       </nav>

@@ -8,6 +8,7 @@ model Company {
   invitations Invitation[]
 
   performanceRecords PerformanceRecord[] @relation("CompanyPerformance")
+  tvDevices   TvDevice[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -32,6 +33,22 @@ model CompanySettings {
   celebrationStyle String   @default("default")
   celebrationSoundUrl String?
   tvTheme          String   @default("dark")
+  tvPassword       String?
   reportRecipients String[]
   isReportGenerationActive Boolean @default(true)
+}
+
+model TvDevice {
+  id         String   @id @default(uuid())
+  companyId  Int
+  company    Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  deviceName String
+  deviceId   String
+  
+  isBlocked  Boolean  @default(false)
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([companyId, deviceId])
 }

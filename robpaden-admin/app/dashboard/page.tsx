@@ -37,7 +37,7 @@ export default function DashboardPage() {
           <p className="text-sm text-zinc-500 mt-1">Manage all offices, managers, and system settings.</p>
         </div>
         <div className="flex gap-3">
-          <Link href="/dashboard/user-management" className="bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer inline-block">
+          <Link href="/dashboard/manager-management" className="bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50 font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer inline-block">
             + New Manager
           </Link>
           <Link href="/dashboard/offices" className="bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm px-4 py-2 rounded-lg transition-colors shadow-sm cursor-pointer inline-block">

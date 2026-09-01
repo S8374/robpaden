@@ -5,10 +5,14 @@ import { ArrowLeft, Users, Activity, Shield, Mail, Target, BarChart } from "luci
 import { ManagerActivityTimeline } from "./_components/timelines/ManagerActivityTimeline";
 import { AgentActivityTimeline } from "./_components/timelines/AgentActivityTimeline";
 import { UserProfileCard } from "./_components/ui/UserProfileCard";
+import { SalesHistoryTable } from "./_components/tables/SalesHistoryTable";
+import { ManagedAgentsTable } from "./_components/tables/ManagedAgentsTable";
 import { useUserDetails } from "./_hooks/useUserDetails";
+import { useRouter } from "next/navigation";
 
 export default function UserDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { state, actions } = useUserDetails(params);
+  const router = useRouter();
 
   if (state.isLoading) {
     return (
@@ -22,8 +26,8 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
     return (
       <div className="p-6 text-center">
         <p className="text-red-500 font-medium">Failed to load user details or user not found.</p>
-        <Link href="/dashboard/user-management" className="text-indigo-600 hover:underline mt-4 inline-block">
-          Return to User Management
+        <Link href="/dashboard/manager-management" className="text-indigo-600 hover:underline mt-4 inline-block">
+          Return to Manager Management
         </Link>
       </div>
     );
@@ -35,12 +39,12 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
     <div className="space-y-6 animate-in fade-in duration-500 mx-auto pb-10 h-full">
       {/* Header / Breadcrumb */}
       <div className="flex items-center gap-4">
-        <Link 
-          href="/dashboard/user-management"
-          className="p-2 bg-white border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors shadow-sm"
+        <button 
+          onClick={() => router.back()}
+          className="p-2 bg-white border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors shadow-sm cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5" />
-        </Link>
+        </button>
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">User Details</h1>
           <p className="text-sm text-zinc-500 mt-1">Viewing full profile and assigned resources.</p>
@@ -66,6 +70,17 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
               )}
             </button>
             <button
+              onClick={() => actions.setActiveTab('salesHistory')}
+              className={`px-4 py-2.5 text-sm font-semibold transition-colors relative cursor-pointer ${
+                state.activeTab === 'salesHistory' ? 'text-indigo-600' : 'text-zinc-500 hover:text-zinc-700'
+              }`}
+            >
+              Sales History
+              {state.activeTab === 'salesHistory' && (
+                <span className="absolute bottom-[-1px] left-0 w-full h-0.5 bg-indigo-600 rounded-t-full"></span>
+              )}
+            </button>
+            <button
               onClick={() => actions.setActiveTab('activity')}
               className={`px-4 py-2.5 text-sm font-semibold transition-colors relative cursor-pointer ${
                 state.activeTab === 'activity' ? 'text-indigo-600' : 'text-zinc-500 hover:text-zinc-700'
@@ -79,82 +94,37 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
           </div>
 
           {state.activeTab === 'agents' && (
-            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                  <Users className="w-4 h-4" />
-                </div>
-                <h3 className="font-bold text-zinc-900">Managed Agents ({user.agents?.length || 0})</h3>
-              </div>
-            
-              <div className="overflow-x-auto pb-4">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-[10px] font-bold text-zinc-400 uppercase bg-zinc-50/50">
-                    <tr>
-                      <th className="px-6 py-4 tracking-wider border-b border-zinc-100">Agent Name</th>
-                      <th className="px-4 py-4 tracking-wider border-b border-zinc-100 text-center">Status</th>
-                      <th className="px-4 py-4 tracking-wider border-b border-zinc-100 text-right pr-6">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100">
-                    {!user.agents || user.agents.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">
-                          No agents currently managed.
-                        </td>
-                      </tr>
-                    ) : (
-                      user.agents.map((agent: any) => (
-                        <tr key={agent.id} className="hover:bg-zinc-50/50 transition-colors">
-                          <td className="px-6 py-4">
-                            <p className="font-semibold text-zinc-900">{agent.name}</p>
-                            <p className="text-xs text-zinc-500">{agent.email}</p>
-                          </td>
-                          <td className="px-4 py-4 text-center">
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${agent.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
-                              {agent.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-right pr-6">
-                            <div className="flex items-center justify-end gap-2">
-                              <button 
-                                onClick={() => actions.router.push(`/dashboard/user-management/${agent.id}`)}
-                                className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded hover:bg-indigo-100 transition-colors cursor-pointer"
-                              >
-                                View Details
-                              </button>
-                              <button 
-                                onClick={() => actions.handleToggleStatus(agent.id, agent.isActive)}
-                                className={`px-3 py-1 text-xs font-semibold rounded transition-colors cursor-pointer ${agent.isActive ? 'bg-amber-50 text-amber-600 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
-                              >
-                                {agent.isActive ? 'Block' : 'Unblock'}
-                              </button>
-                              <button 
-                                onClick={() => actions.handleDeleteAgent(agent.id)}
-                                className="px-3 py-1 bg-red-50 text-red-600 text-xs font-semibold rounded hover:bg-red-100 transition-colors cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <ManagedAgentsTable 
+                agents={user.agents} 
+                router={actions.router} 
+                handleToggleStatus={actions.handleToggleStatus} 
+                handleDeleteAgent={actions.handleDeleteAgent} 
+              />
+            </div>
+          )}
+
+          {state.activeTab === 'salesHistory' && (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <SalesHistoryTable 
+                salesHistory={(user as any).salesHistory || []} 
+                selectedMonth={state.selectedMonth}
+                selectedYear={state.selectedYear}
+                onMonthChange={actions.setSelectedMonth}
+                onYearChange={actions.setSelectedYear}
+              />
             </div>
           )}
           
           {state.activeTab === 'activity' && (
-            <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <h3 className="font-bold text-zinc-900">Activity History</h3>
-              </div>
-              <ManagerActivityTimeline managerId={user.id} />
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <ManagerActivityTimeline 
+                managerId={user.id} 
+                selectedMonth={state.selectedMonth}
+                selectedYear={state.selectedYear}
+                onMonthChange={actions.setSelectedMonth}
+                onYearChange={actions.setSelectedYear}
+              />
             </div>
           )}
         </div>
@@ -271,66 +241,13 @@ export default function UserDetailsPage({ params }: { params: Promise<{ id: stri
             </div>
           </div>
           
-          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm md:col-span-2">
-             <div className="p-5 border-b border-zinc-100 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <h3 className="font-bold text-zinc-900">Sales History</h3>
-             </div>
-             
-             <div className="overflow-x-auto max-h-[400px]">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-[10px] font-bold text-zinc-400 uppercase bg-zinc-50/50 sticky top-0 z-10">
-                    <tr>
-                      <th className="px-6 py-4 tracking-wider border-b border-zinc-100">Date</th>
-                      <th className="px-6 py-4 tracking-wider border-b border-zinc-100">Sales Count</th>
-                      <th className="px-6 py-4 tracking-wider border-b border-zinc-100">Target Completion</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100">
-                    {!user.performanceRecords || user.performanceRecords.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className="px-6 py-8 text-center text-zinc-500">
-                          No sales history found for this agent.
-                        </td>
-                      </tr>
-                    ) : (
-                      user.performanceRecords.map((record: any, idx: number) => {
-                        const target = user.dailyGoal || 1;
-                        const percentage = Math.min(100, Math.round((record.salesCount / target) * 100));
-                        
-                        return (
-                          <tr key={idx} className="hover:bg-zinc-50/50 transition-colors">
-                            <td className="px-6 py-4 text-zinc-500 font-medium">
-                              {new Date(record.startDate).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="font-bold text-zinc-900 bg-zinc-100 px-3 py-1 rounded-full">
-                                {record.salesCount} <span className="text-zinc-400 text-[11px] font-medium ml-1">/ {user.dailyGoal || 0}</span>
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 w-[35%]">
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden">
-                                  <div 
-                                    className={`h-full rounded-full transition-all duration-500 ${percentage >= 100 ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-                                    style={{ width: `${percentage}%` }}
-                                  ></div>
-                                </div>
-                                <span className={`text-xs font-bold w-10 text-right ${percentage >= 100 ? 'text-emerald-600' : 'text-zinc-500'}`}>
-                                  {percentage}%
-                                </span>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-             </div>
-          </div>
+          <SalesHistoryTable 
+            salesHistory={(user as any).salesHistory || []} 
+            selectedMonth={state.selectedMonth}
+            selectedYear={state.selectedYear}
+            onMonthChange={actions.setSelectedMonth}
+            onYearChange={actions.setSelectedYear}
+          />
 
           <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm md:col-span-2">
              <div className="p-5 border-b border-zinc-100 flex items-center gap-3">

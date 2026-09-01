@@ -53,14 +53,25 @@ export interface TVBoardData {
 
 export const tvApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getTVBoard: builder.query<{ success: boolean; message: string; data: TVBoardData }, number>({
-      query: (companyId) => ({
-        url: `/tv/board/${companyId}`,
-        method: "GET"
+    getTVBoard: builder.query<{ success: boolean; message: string; data: TVBoardData }, { password?: string, deviceId?: string, deviceName?: string }>({
+      query: ({ password, deviceId, deviceName }) => ({
+        url: `/tv/board${password ? `?password=${encodeURIComponent(password)}` : ''}`,
+        method: "GET",
+        headers: {
+          ...(deviceId && { "x-device-id": deviceId }),
+          ...(deviceName && { "x-device-name": deviceName }),
+        }
       }),
       providesTags: ["Dashboard"],
+    }),
+    tvLogin: builder.mutation<{ success: boolean; message: string; data: any }, { password?: string, deviceId?: string, deviceName?: string }>({
+      query: (body) => ({
+        url: `/tv/login`,
+        method: "POST",
+        data: body,
+      }),
     }),
   }),
 });
 
-export const { useGetTVBoardQuery } = tvApi;
+export const { useGetTVBoardQuery, useTvLoginMutation } = tvApi;

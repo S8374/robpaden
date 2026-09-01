@@ -94,5 +94,26 @@ export class OfficeManagementController extends BaseController {
     return this.sendResponse(req, res, "Office deleted successfully", 200, null);
   }
 
+  public async getTvDevices(req: Request, res: Response) {
+    this.logger.info("Received request to fetch TV devices for office");
+    const officeId = Number(req.params.id);
+    const result = await this.officeService.getTvDevices(officeId);
+    return this.sendResponse(req, res, "TV Devices retrieved successfully", 200, result);
+  }
+
+  public async deleteTvDevice(req: Request, res: Response) {
+    this.logger.info("Received request to delete TV device");
+    const deviceId = req.params.deviceId;
+    await this.officeService.deleteTvDevice(deviceId as string);
+    return this.sendResponse(req, res, "TV Device deleted successfully", 200, null);
+  }
+
+  public async blockTvDevice(req: Request, res: Response) {
+    this.logger.info("Received request to block/unblock TV device");
+    const deviceId = req.params.deviceId;
+    const { isBlocked } = req.body;
+    const result = await this.officeService.blockTvDevice(deviceId as string, isBlocked);
+    return this.sendResponse(req, res, "TV Device block status updated", 200, result);
+  }
 
 }

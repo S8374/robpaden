@@ -6,9 +6,17 @@ export function useUserDetails(params: Promise<{ id: string }>) {
   const unwrappedParams = use(params);
   const userId = parseInt(unwrappedParams.id, 10);
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'agents' | 'activity'>('agents');
+  const [activeTab, setActiveTab] = useState<'agents' | 'salesHistory' | 'activity'>('agents');
   
-  const { data, isLoading, isError } = useGetUserDetailsQuery(userId, {
+  const currentDate = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  
+  const { data, isLoading, isError } = useGetUserDetailsQuery({ 
+    id: userId, 
+    month: selectedMonth, 
+    year: selectedYear 
+  }, {
     skip: isNaN(userId),
   });
 
@@ -34,11 +42,15 @@ export function useUserDetails(params: Promise<{ id: string }>) {
       isLoading,
       isError,
       activeTab,
+      selectedMonth,
+      selectedYear,
     },
     actions: {
       setActiveTab,
       handleDeleteAgent,
       handleToggleStatus,
+      setSelectedMonth,
+      setSelectedYear,
       router,
     }
   };

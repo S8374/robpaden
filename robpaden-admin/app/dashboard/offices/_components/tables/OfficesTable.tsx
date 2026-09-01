@@ -130,7 +130,7 @@ export function OfficesTable({
                              </span>
                            </>
                         ) : (
-                           <Link href="/dashboard/user-management" className="text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-md transition-colors inline-flex items-center gap-1.5">
+                           <Link href="/dashboard/manager-management" className="text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-md transition-colors inline-flex items-center gap-1.5">
                              <Plus className="w-3 h-3" /> Assign Manager
                            </Link>
                         )}
@@ -174,6 +174,12 @@ export function OfficesTable({
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <Link 
+                        href={`/dashboard/offices/${office.id}`}
+                        className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded hover:bg-indigo-100 transition-colors cursor-pointer mr-2"
+                      >
+                        See Details
+                      </Link>
                       <button 
                         onClick={() => openEditModal(office)}
                         className="text-zinc-400 hover:text-zinc-900 transition-colors p-2 rounded-lg hover:bg-zinc-100 cursor-pointer" title="Edit Office"

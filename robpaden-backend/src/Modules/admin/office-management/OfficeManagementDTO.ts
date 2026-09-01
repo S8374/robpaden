@@ -24,6 +24,7 @@ export const updateOfficeSettingsSchema = {
     celebrationSound: z.preprocess((val) => val === "true" || val === true, z.boolean()).optional(),
     celebrationStyle: z.string().optional(),
     tvTheme: z.string().optional(),
+    tvPassword: z.string().optional(),
     logoUrl: z.any().optional(),
     celebrationSoundUrl: z.any().optional(),
     reportRecipients: z.preprocess((val) => {

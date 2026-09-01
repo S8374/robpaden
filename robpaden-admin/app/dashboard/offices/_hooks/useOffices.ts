@@ -46,11 +46,7 @@ export function useOffices() {
     officeCloseTime: "17:00",
     monthlyGoal: ""
   });
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [celebrationSoundFile, setCelebrationSoundFile] = useState<File | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const soundInputRef = useRef<HTMLInputElement>(null);
 
   const offices = data?.data || [];
 
@@ -72,8 +68,6 @@ export function useOffices() {
       payload.append("officeStartTime", formData.officeStartTime);
       payload.append("officeCloseTime", formData.officeCloseTime);
       if (formData.monthlyGoal) payload.append("monthlyGoal", formData.monthlyGoal);
-      if (logoFile) payload.append("logoUrl", logoFile);
-      if (celebrationSoundFile) payload.append("celebrationSoundUrl", celebrationSoundFile);
 
       let res;
       if (editingOffice) {
@@ -101,8 +95,6 @@ export function useOffices() {
       officeCloseTime: office.settings?.officeCloseTime || "17:00",
       monthlyGoal: office.settings?.monthlyGoal ? String(office.settings.monthlyGoal) : ""
     });
-    setLogoFile(null);
-    setCelebrationSoundFile(null);
     setErrorMsg("");
     setIsModalOpen(true);
   };
@@ -116,8 +108,6 @@ export function useOffices() {
       officeCloseTime: "17:00",
       monthlyGoal: ""
     });
-    setLogoFile(null);
-    setCelebrationSoundFile(null);
     setErrorMsg("");
     setIsModalOpen(true);
   };
@@ -125,8 +115,6 @@ export function useOffices() {
   const closeModal = () => {
     setIsModalOpen(false);
     setEditingOffice(null);
-    setLogoFile(null);
-    setCelebrationSoundFile(null);
     setErrorMsg("");
   };
 
@@ -151,19 +139,13 @@ export function useOffices() {
       editingOffice,
       officeToDelete,
       formData,
-      logoFile,
-      celebrationSoundFile,
       errorMsg,
-      fileInputRef,
-      soundInputRef,
     },
     data: {
       offices,
     },
     actions: {
       setFormData,
-      setLogoFile,
-      setCelebrationSoundFile,
       setErrorMsg,
       setOfficeToDelete,
       handleCreateOrUpdateOffice,
