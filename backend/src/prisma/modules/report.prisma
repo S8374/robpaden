@@ -1,0 +1,24 @@
+model ReportHistory {
+  id     Int      @id @default(autoincrement())
+  date   DateTime
+  sentTo String // JSON string or comma-separated emails
+  status String // "Sent", "Failed"
+  pdfUrl String? // S3 URL of the generated PDF report
+
+  managerId Int
+  manager   User @relation("ManagerReportHistory", fields: [managerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model ReportRecipient {
+  id    Int    @id @default(autoincrement())
+  email String
+
+  managerId Int
+  manager   User @relation("ManagerReportRecipients", fields: [managerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([managerId, email])
+}
